@@ -7,6 +7,7 @@ interface Message {
   content: string;
 }
 
+
 interface ConnectionStatus {
   connected: boolean;
   sessionId?: string;
