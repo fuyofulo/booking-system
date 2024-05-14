@@ -1,6 +1,5 @@
 import { Router, Request, Response } from "express";
 import { prismaClient } from "@repo/db/client";
-import jwt from "jsonwebtoken";
 import { authMiddleware } from "../middlewares/auth";
 import { CreateRestaurantSchema } from "@repo/schemas/types";
 

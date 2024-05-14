@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
+import { registerUserResources } from "./userResources.js";
 
 export function registerResources(server: McpServer): void {
   // Create a simple resource at a fixed URI
@@ -18,4 +19,7 @@ export function registerResources(server: McpServer): void {
       };
     }
   );
+
+  // Register user resources
+  registerUserResources(server);
 }

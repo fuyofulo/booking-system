@@ -166,6 +166,12 @@ async function fetchServerCapabilities(): Promise<void> {
         console.log(`  - ${resource.name}: ${resource.uri}`);
       }
     }
+
+    // Check if user profile tool is available and automatically run it
+    if (availableTools.some((tool) => tool.name === "get-user-profile")) {
+      console.log("\nFetching your profile information...");
+      await callTool("get-user-profile", {});
+    }
   } catch (error) {
     console.error("Error fetching server capabilities:", error);
   }
@@ -232,6 +238,7 @@ function printHelp(): void {
     "  get-prompt [name] [args]   - Get a prompt with optional JSON arguments"
   );
   console.log("  list-resources             - List available resources");
+  console.log("  profile                    - Show your user profile");
   console.log("  help                       - Show this help");
   console.log("  quit                       - Exit the program");
 }
@@ -369,6 +376,20 @@ function commandLoop(): void {
 
         case "list-resources":
           await listResources(true); // true means print to console
+          break;
+
+        case "profile":
+        case "user-profile":
+          if (
+            client &&
+            availableTools.some((tool) => tool.name === "get-user-profile")
+          ) {
+            await callTool("get-user-profile", {});
+          } else {
+            console.log(
+              "User profile tool is not available or you're not connected."
+            );
+          }
           break;
 
         case "help":

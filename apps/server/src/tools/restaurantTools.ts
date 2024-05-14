@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { getTokenForSession } from "./auth.js";
-import { post } from "./api-client.js";
-import { BACKEND_API_URL } from "./config.js";
+import { getTokenForSession } from "../auth.js";
+import { post } from "../req-helper.js";
+import { BACKEND_API_URL } from "../config.js";
+import { CreateRestaurantSchema } from "@repo/schemas/types";
 
 /**
  * Register restaurant-specific tools with the MCP server
@@ -13,14 +14,7 @@ export function registerRestaurantTools(server: McpServer): void {
   server.tool(
     "create-restaurant",
     "Creates a new restaurant with the specified name",
-    {
-      name: z
-        .string()
-        .min(
-          3,
-          "Restaurant name is required and must be at least 3 characters"
-        ),
-    },
+    CreateRestaurantSchema.shape,
     async (
       { name }: { name: string },
       context: any

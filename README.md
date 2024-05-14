@@ -1,84 +1,101 @@
-# Turborepo starter
+# Restaurant Management System with MCP
 
-This Turborepo starter is maintained by the Turborepo core team.
+This project implements a restaurant management system using the Model Context Protocol (MCP) to enable AI-driven interactions. The system allows users to manage restaurant tables, reservations, and other restaurant operations through natural language commands.
 
-## Using this example
+## System Architecture
 
-Run the following command:
+The system consists of three main components:
 
-```sh
-npx create-turbo@latest
-```
+1. **MCP Server (Port 3030)**: Handles authentication, provides restaurant management tools, and processes requests
+2. **Web Interface (Port 8080)**: Connects the frontend to the MCP server and provides Claude AI integration
+3. **Frontend UI (Port 3000)**: Next.js application that provides the user interface
 
-## What's inside?
+## Installation
 
-This Turborepo includes the following packages/apps:
+1. Install dependencies:
 
-### Apps and Packages
+   ```
+   npm install
+   ```
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+2. Get an Anthropic API Key (required for natural language conversations):
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+   - Visit [Anthropic's website](https://www.anthropic.com/) to sign up for an API key
+   - Create a `.env` file in the `apps/client` directory with: `ANTHROPIC_API_KEY=your_anthropic_api_key_here`
 
-### Utilities
+3. Build the project:
+   ```
+   npm run build
+   ```
 
-This Turborepo has some additional tools already setup for you:
+## Running the System
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+### Option 1: Run All Components Together
 
 ```
-cd my-turborepo
-pnpm build
+npm install -g concurrently  # If not already installed
+npm run start-all
 ```
 
-### Develop
+### Option 2: Run Components Individually
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+Terminal 1 - Start the MCP Server (port 3030):
 
 ```
-cd my-turborepo
-npx turbo login
+npm run start-server
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+Terminal 2 - Start the Web Interface with Claude AI (port 8080):
 
 ```
-npx turbo link
+npm run start-web
 ```
 
-## Useful Links
+Terminal 3 - Start the Frontend UI (port 3000):
 
-Learn more about the power of Turborepo:
+```
+npm run start-frontend
+```
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+Terminal 4 (Optional) - Start the Command-line Claude Client:
+
+```
+npm run start-claude-client
+```
+
+## Using the Web Interface with Claude
+
+The web interface has been updated to use Claude AI for natural language understanding. When using the web interface:
+
+1. Open the frontend in your browser at http://localhost:3000
+2. Enter your JWT token and connect to the server
+3. You can now use natural language to manage restaurants:
+   - "Create a new table for 4 people at Restaurant XYZ"
+   - "Show me all tables at Restaurant ABC"
+   - "Update the status of table 5 to reserved"
+
+The web interface will:
+
+1. Process your message with Claude AI
+2. Automatically detect your intent to use restaurant management tools
+3. Execute the appropriate tools in the background
+4. Provide a conversational response
+
+## Using the Command-line Claude Client
+
+Alternatively, you can use the command-line Claude client:
+
+1. The client will automatically connect to the MCP server on port 3030
+2. It will fetch available tools including restaurant-specific tools
+3. You can issue natural language commands directly in the terminal
+
+## Troubleshooting
+
+- If you encounter authentication issues, use the `auth <token>` command in the Claude client
+- If tools are not appearing, try reconnecting with the `connect` command
+- If Claude integration is not working, make sure you've set the ANTHROPIC_API_KEY in the .env file
+- To clear conversation history, use the `clear` command in the Claude client or disconnect/reconnect in the web interface
+
+## License
+
+MIT

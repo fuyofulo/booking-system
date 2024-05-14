@@ -11,8 +11,8 @@ import {
   JSONRPCRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 import { InMemoryEventStore } from "./inMemoryEventStore.js";
-import { registerTools } from "./tools.js";
-import { registerResources } from "./resources.js";
+import { registerTools } from "./tools/tools.js";
+import { registerResources } from "./resources/resources.js";
 import { removeTokenForSession, authMiddleware } from "./auth.js";
 
 // Create an MCP server with implementation details
@@ -166,7 +166,7 @@ app.delete("/mcp", async (req: Request, res: Response) => {
 });
 
 // Start the server
-const PORT = 3000;
+const PORT = 3030;
 app.listen(PORT, () => {
   console.log(`MCP Streamable HTTP Server listening on port ${PORT}`);
 });

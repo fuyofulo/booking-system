@@ -5,6 +5,8 @@ import {
   GetPromptResult,
 } from "@modelcontextprotocol/sdk/types.js";
 import { registerRestaurantTools } from "./restaurantTools.js";
+import { registerUserTools } from "./userTools.js";
+import { registerTableTools } from "./tableTools.js";
 
 export function registerTools(server: McpServer): void {
   // Register a simple tool that returns a greeting
@@ -27,41 +29,6 @@ export function registerTools(server: McpServer): void {
           {
             type: "text",
             text: `Hello, ${name}!`,
-          },
-        ],
-      };
-    }
-  );
-
-  // Add a protected tool that shows user info from the JWT token
-  server.tool(
-    "protected-info",
-    "A protected tool that requires authentication and shows user information",
-    {},
-    async (
-      args: Record<string, never>,
-      context: any
-    ): Promise<CallToolResult> => {
-      // Get user info from request
-      const userId = context.request?.userId;
-
-      if (!userId) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: "Unauthorized: Authentication required",
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Protected information:\n\nUser ID: ${userId}\nAuthenticated: Yes\n\nThis information is only visible to authenticated users.`,
           },
         ],
       };
@@ -207,4 +174,10 @@ export function registerTools(server: McpServer): void {
 
   // Register restaurant-specific tools
   registerRestaurantTools(server);
+
+  // Register user-specific tools
+  registerUserTools(server);
+
+  // Register table-specific tools
+  registerTableTools(server);
 }

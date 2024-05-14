@@ -1,1 +1,1 @@
-{"root":["./src/api-client.ts","./src/auth.ts","./src/config.ts","./src/inmemoryeventstore.ts","./src/index.ts","./src/resources.ts","./src/restauranttools.ts","./src/tools.ts"],"version":"5.8.2"}
+{"root":["./src/auth.ts","./src/config.ts","./src/inmemoryeventstore.ts","./src/index.ts","./src/req-helper.ts","./src/resources/resources.ts","./src/resources/userresources.ts","./src/tools/restauranttools.ts","./src/tools/tabletools.ts","./src/tools/tools.ts","./src/tools/usertools.ts"],"version":"5.8.2"}
