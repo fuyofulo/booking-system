@@ -53,10 +53,11 @@ export const CreateTimeSlotSchema = z.object({
 
 export const CreateBookingSchema = z.object({
   tableId: z.number(),
-  timeSlotId: z.number(),
+  date: z.string().datetime(), // ISO string like "2025-05-02T00:00:00.000Z"
+  slotIndices: z.number().array().min(1),
   customerName: z.string().min(1),
   customerPhone: z.string().optional(),
-})
+});
 
 // -------------------- Restaurant User --------------------
 
