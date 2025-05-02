@@ -27,7 +27,6 @@ typedRouter.post("/create", authMiddleware, checkPermission("canCreateRoles"), a
   const canManageStaff = parsedData.data.canManageStaff;
 
   try {
-
     const newRole = await prismaClient.role.create({
       data: {
         name,
@@ -42,8 +41,7 @@ typedRouter.post("/create", authMiddleware, checkPermission("canCreateRoles"), a
       message: "Role created successfully",
       role: newRole,
     });
-  } catch (err) {
-    console.error("Role creation error:", err);
+  } catch {
     return res.json({
       message: "Failed to create role",
     });

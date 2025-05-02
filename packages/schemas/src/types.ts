@@ -65,3 +65,12 @@ export const CreateRestaurantUserSchema = z.object({
   restaurantId: z.number(),
   roleId: z.number()
 });
+
+export const updateTimeSlotsSchema = z.object({
+  entries: z.array(z.object({
+    tableIds: z.array(z.number()),
+    date: z.string(), // or z.coerce.date() if you want to convert
+    slotIndices: z.array(z.number()),
+    isOpen: z.boolean()
+  }))
+});
