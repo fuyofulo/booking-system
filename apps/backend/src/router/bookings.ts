@@ -77,7 +77,7 @@ typedRouter.post('/book', authMiddleware, checkPermission("canManageSlots"), asy
     }
 });
 
-typedRouter.post("/available", authMiddleware, async (req: Request, res: Response) => {
+typedRouter.get("/available", authMiddleware, async (req: Request, res: Response) => {
     const { restaurantId, date: dateStr } = req.body;
 
     if (!restaurantId || !dateStr) {
@@ -128,6 +128,63 @@ typedRouter.post("/available", authMiddleware, async (req: Request, res: Respons
         return res.json({ tables: formatted });
     } catch (err) {
         console.error("Failed to fetch available slots:", err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+typedRouter.get("/timeslots", authMiddleware, async (req: Request, res: Response) => {
+    const { restaurantId, date: dateStr } = req.body;
+
+    if (!restaurantId || !dateStr) {
+        return res.status(400).json({ message: "Missing restaurantId or date" });
+    }
+
+    const rawDate = new Date(dateStr as string);
+    const date = new Date(Date.UTC(rawDate.getUTCFullYear(), rawDate.getUTCMonth(), rawDate.getUTCDate()));
+
+    try {
+        const tables = await prismaClient.table.findMany({
+            where: { restaurantId: Number(restaurantId) },
+            select: { id: true, name: true, capacity: true }
+        });
+
+        const tableIds = tables.map(t => t.id);
+
+        const allSlots = await prismaClient.tableTimeSlot.findMany({
+            where: {
+                tableId: { in: tableIds },
+                date,
+            },
+            select: {
+                tableId: true,
+                slotIndex: true,
+                isOpen: true,
+            },
+            orderBy: {
+                slotIndex: "asc",
+            }
+        });
+
+        // Map slots by table
+        const slotMap: Record<number, { slotIndex: number; isOpen: boolean }[]> = {};
+        for (const slot of allSlots) {
+            if (!slotMap[slot.tableId]) {
+                slotMap[slot.tableId] = [];
+            }
+            slotMap[slot.tableId]!.push({ slotIndex: slot.slotIndex, isOpen: slot.isOpen });
+        }
+
+        // Format result
+        const formatted = tables.map((table) => ({
+            tableId: table.id,
+            tableName: table.name,
+            capacity: table.capacity,
+            timeSlots: slotMap[table.id] || [] // empty array if no slots exist
+        }));
+
+        return res.json({ tables: formatted });
+    } catch (err) {
+        console.error("Failed to fetch time slots:", err);
         return res.status(500).json({ message: "Internal server error" });
     }
 });
