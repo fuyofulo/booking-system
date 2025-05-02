@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  name            String
+  password        String
+  restaurants     Restaurant[]
+  restaurantUsers RestaurantUser[]
+}
+
+model Restaurant {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  ownerId         String
+  owner           User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  restaurantUsers RestaurantUser[]
+  tables          Table[]
+}
+
+model Role {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  
+  // Permission flags
+  canCreateRoles   Boolean           @default(false)
+  canManageTables  Boolean           @default(false)
+  canManageSlots   Boolean           @default(false)
+  canManageStaff   Boolean           @default(false)
+
+  restaurantUsers  RestaurantUser[]
+}
+
+model RestaurantUser {
+  id           Int       @id @default(autoincrement())
+  userId       String
+  restaurantId Int
+  roleId       Int
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+}
+
+model Table {
+  id           Int         @id @default(autoincrement())
+  restaurantId Int
+  name         String
+  capacity     Int
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+  timeSlots    TableTimeSlot[] // ⬅️ New relation: table-specific slot availability
+}
+
+model TableTimeSlot {
+  id        Int      @id @default(autoincrement())
+  tableId   Int
+  date      DateTime // Normalized to midnight (YYYY-MM-DDT00:00:00Z)
+  slotIndex Int      // 0–47 for 30-minute intervals in a day
+  isOpen    Boolean  // Whether this table is available in this slot
+
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, date, slotIndex]) // prevent duplicates
+}
+
+model Booking {
+  id            Int       @id @default(autoincrement())
+  customerName  String
+  customerPhone String?
+  tableId       Int
+  date          DateTime  // For easier querying (redundant but practical)
+  slotIndex     Int       // Matches slot booked
+  createdAt     DateTime  @default(now())
+
+  table         Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@index([date, slotIndex])
+}
