@@ -12,30 +12,31 @@ model User {
   email           String            @unique
   name            String
   password        String
-  restaurants     Restaurant[]
-  restaurantUsers RestaurantUser[]
+  restaurants     Restaurant[]      // A user can have multiple restaurants (owned by them)
+  restaurantUsers RestaurantUser[]  // A user can have multiple roles in various restaurants
 }
 
 model Restaurant {
   id              Int               @id @default(autoincrement())
   name            String            @unique
-  ownerId         String
+  ownerId         String            // Owner's userId
   owner           User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  restaurantUsers RestaurantUser[]
-  tables          Table[]
+  restaurantUsers RestaurantUser[]  // A restaurant can have multiple users (staff, etc.)
+  tables          Table[]           // A restaurant can have multiple tables
+  roles           Role[]            // A restaurant can have multiple roles (e.g. Owner, Manager)
 }
 
 model Role {
-  id               Int               @id @default(autoincrement())
-  name             String            @unique
+  id               Int      @id @default(autoincrement())
+  name             String   // Role name (e.g. Owner, Manager)
+  canCreateRoles   Boolean
+  canManageTables  Boolean
+  canManageSlots   Boolean
+  canManageStaff   Boolean
+  restaurantId     Int
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   
-  // Permission flags
-  canCreateRoles   Boolean           @default(false)
-  canManageTables  Boolean           @default(false)
-  canManageSlots   Boolean           @default(false)
-  canManageStaff   Boolean           @default(false)
-
-  restaurantUsers  RestaurantUser[]
+  restaurantUsers  RestaurantUser[]  // Add the inverse relation here
 }
 
 model RestaurantUser {
@@ -56,8 +57,8 @@ model Table {
   capacity     Int
 
   restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  bookings     Booking[]
-  timeSlots    TableTimeSlot[] // ⬅️ New relation: table-specific slot availability
+  bookings     Booking[]   // Each table can have multiple bookings
+  timeSlots    TableTimeSlot[] // Each table can have multiple time slots for availability
 }
 
 model TableTimeSlot {
@@ -69,7 +70,7 @@ model TableTimeSlot {
 
   table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  @@unique([tableId, date, slotIndex]) // prevent duplicates
+  @@unique([tableId, date, slotIndex]) // Prevent duplicate slots for the same table on the same date
 }
 
 model Booking {
@@ -79,9 +80,9 @@ model Booking {
   tableId       Int
   date          DateTime  // For easier querying (redundant but practical)
   slotIndex     Int       // Matches slot booked
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime  @default(now())  // Automatically set when the booking is created
 
   table         Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  @@index([date, slotIndex])
+  @@index([date, slotIndex])  // Index for querying bookings by date and time slot
 }

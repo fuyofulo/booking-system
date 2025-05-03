@@ -150,36 +150,74 @@ typedRouter.get("/timeslots", authMiddleware, async (req: Request, res: Response
 
         const tableIds = tables.map(t => t.id);
 
-        const allSlots = await prismaClient.tableTimeSlot.findMany({
-            where: {
-                tableId: { in: tableIds },
-                date,
-            },
-            select: {
-                tableId: true,
-                slotIndex: true,
-                isOpen: true,
-            },
-            orderBy: {
-                slotIndex: "asc",
-            }
-        });
+        const [allSlots, bookings] = await Promise.all([
+            prismaClient.tableTimeSlot.findMany({
+                where: {
+                    tableId: { in: tableIds },
+                    date,
+                },
+                select: {
+                    tableId: true,
+                    slotIndex: true,
+                    isOpen: true,
+                },
+                orderBy: {
+                    slotIndex: "asc",
+                }
+            }),
+
+            prismaClient.booking.findMany({
+                where: {
+                    tableId: { in: tableIds },
+                    date,
+                },
+                select: {
+                    tableId: true,
+                    slotIndex: true,
+                    customerName: true,
+                    customerPhone: true,
+                }
+            })
+        ]);
+
+        // Create a map to find booking by tableId and slotIndex
+        const bookingMap = new Map<string, { customerName: string; customerPhone?: string }>();
+        for (const booking of bookings) {
+            const key = `${booking.tableId}-${booking.slotIndex}`;
+            bookingMap.set(key, {
+                customerName: booking.customerName,
+                customerPhone: booking.customerPhone ?? undefined,
+            });
+        }
 
         // Map slots by table
-        const slotMap: Record<number, { slotIndex: number; isOpen: boolean }[]> = {};
+        const slotMap: Record<number, {
+            slotIndex: number;
+            isOpen: boolean;
+            booking?: { customerName: string; customerPhone?: string };
+        }[]> = {};
+
         for (const slot of allSlots) {
+            const key = `${slot.tableId}-${slot.slotIndex}`;
+            const bookingInfo = bookingMap.get(key);
+
             if (!slotMap[slot.tableId]) {
                 slotMap[slot.tableId] = [];
             }
-            slotMap[slot.tableId]!.push({ slotIndex: slot.slotIndex, isOpen: slot.isOpen });
+
+            slotMap[slot.tableId]!.push({
+                slotIndex: slot.slotIndex,
+                isOpen: slot.isOpen,
+                ...(slot.isOpen === false && bookingInfo ? { booking: bookingInfo } : {})
+            });
         }
 
-        // Format result
+        // Format final response
         const formatted = tables.map((table) => ({
             tableId: table.id,
             tableName: table.name,
             capacity: table.capacity,
-            timeSlots: slotMap[table.id] || [] // empty array if no slots exist
+            timeSlots: slotMap[table.id] || [] // empty if no slots
         }));
 
         return res.json({ tables: formatted });
@@ -188,6 +226,7 @@ typedRouter.get("/timeslots", authMiddleware, async (req: Request, res: Response
         return res.status(500).json({ message: "Internal server error" });
     }
 });
+
 
 
 export const bookingsRouter = typedRouter;

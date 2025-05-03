@@ -32,12 +32,18 @@ typedRouter.post("/create", authMiddleware, async (req: Request, res: Response) 
     const role = await prismaClient.role.create({
       data: {
         name: "Owner",
+        restaurant: {
+          connect: {
+            id: restaurant.id,  // Connect the role to the existing restaurant by its ID
+          },
+        },
         canCreateRoles: true,
         canManageTables: true,
         canManageSlots: true,
         canManageStaff: true,
       },
     });
+
 
     // creating restaurant user 
     const restaurantUser = await prismaClient.restaurantUser.create({
