@@ -6,6 +6,7 @@ import { restaurantUserRouter } from './router/restaurantUser';
 import { tablesRouter } from './router/tables';
 import { timeslotRouter } from './router/timeslot';
 import { bookingsRouter } from './router/bookings';
+import { generalRouter } from './router/general';
 
 const app = express();
 app.use(express.json());
@@ -25,3 +26,4 @@ app.use('/api/v1/restaurantUser', restaurantUserRouter);
 app.use('/api/v1/tables', tablesRouter); 
 app.use('/api/v1/timeslot', timeslotRouter); 
 app.use('/api/v1/bookings', bookingsRouter); 
+app.use('/api/v1/general', generalRouter); 
