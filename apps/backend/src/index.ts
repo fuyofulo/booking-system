@@ -7,6 +7,7 @@ import { tablesRouter } from './router/tables';
 import { timeslotRouter } from './router/timeslot';
 import { bookingsRouter } from './router/bookings';
 import { generalRouter } from './router/general';
+import { vapiRouter } from './router/vapi';
 
 const app = express();
 app.use(express.json());
@@ -27,3 +28,4 @@ app.use('/api/v1/tables', tablesRouter);
 app.use('/api/v1/timeslot', timeslotRouter); 
 app.use('/api/v1/bookings', bookingsRouter); 
 app.use('/api/v1/general', generalRouter); 
+app.use('/api/v1/vapi', vapiRouter);

@@ -2,12 +2,13 @@
   "type": "module",
   "scripts": {
     "build": "tsc -b && node build/index.js",
-    "dev": "node build/index.js D:\\100xdevs\\project01\\apps\\server\\build\\index.js"
+    "dev": "tsc -b && node build/index.js D:\\100xdevs\\project01\\apps\\server\\build\\index.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
     "@modelcontextprotocol/sdk": "^1.11.0",
     "@types/dotenv": "^6.1.1",
+    "@types/node": "^22.15.12",
     "dotenv": "^16.5.0",
     "node": "^22.15.0",
     "typescript": "^5.8.3"

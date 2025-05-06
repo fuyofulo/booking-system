@@ -17,11 +17,29 @@ if (!ANTHROPIC_API_KEY) {
   throw new Error("ANTHROPIC_API_KEY is not set");
 }
 
+const context = {
+  currentRestaurantId: "",
+  restaurants: {} as Record<string, string>
+};
+
 class MCPClient {
   private mcp: Client;
   private anthropic: Anthropic;
   private transport: StdioClientTransport | null = null;
   private tools: Tool[] = [];
+
+  private jwtToken: string | null = null;
+
+  private async getToken(): Promise<string> {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    const token = await rl.question("Enter JWT token: ");
+    rl.close();
+    return token;
+  }
+
 
   constructor() {
     this.anthropic = new Anthropic({
@@ -65,6 +83,19 @@ class MCPClient {
           input_schema: tool.inputSchema,
         };
       });
+
+      this.jwtToken = await this.getToken();
+
+      const authTool = this.tools.find(t => t.name === "authenticate");
+      if (authTool) {
+        await this.mcp.callTool({
+          name: "authenticate",
+          arguments: { token: this.jwtToken }
+        });
+        console.log("Authentication successful");
+      } else {
+        console.log("Warning: Server doesn't require authentication");
+      }
 
       console.log(
         "Connected to server with tools:",

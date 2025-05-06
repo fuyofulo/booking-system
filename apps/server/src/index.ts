@@ -4,6 +4,8 @@ import { z } from "zod";
 
 const BACKEND_BASE_URL = "http://localhost:7000/api/v1";
 
+let authToken: string | null = null;
+
 // Generic HTTP request helper
 async function makeHttpRequest<T>(
   url: string,
@@ -12,10 +14,14 @@ async function makeHttpRequest<T>(
   body?: any
 ): Promise<T | null> {
   try {
-    const finalHeaders = {
+    const finalHeaders: Record<string, string> = {
       "Content-Type": "application/json",
       ...headers,
     };
+
+    if (authToken) {
+      finalHeaders["Authorization"] = `${authToken}`;
+    }
 
     const options: RequestInit = {
       method,
@@ -44,6 +50,29 @@ const server = new McpServer({
   name: "restaurant",
   version: "1.0.0",
 });
+
+// Authentication tool to receive token from client
+server.tool(
+  "authenticate",
+  "Authenticate with a JWT token",
+  {
+    token: z.string().describe("JWT token for authentication"),
+  },
+  async ({ token }) => {
+    authToken = token;
+    console.log("Authenticated with token:", authToken);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: "Authentication successful",
+        },
+      ],
+    };
+  }
+);
+
 
 // Register get-users tool
 server.tool("get-users", "Get all users from the database", {}, async () => {
