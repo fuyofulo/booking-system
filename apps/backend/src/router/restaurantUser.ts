@@ -67,5 +67,22 @@ typedRouter.post("/create", authMiddleware, checkPermission('canManageStaff'), a
 }
 );
 
+typedRouter.post("/getAll", authMiddleware, async (req:Request, res:Response) => {
+
+  const restaurantId = req.body.restaurantId;
+
+  const users = await prismaClient.restaurantUser.findMany({
+    where: {
+      restaurantId: restaurantId,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  return res.json(users);
+
+})
+
 
 export const restaurantUserRouter = typedRouter;
