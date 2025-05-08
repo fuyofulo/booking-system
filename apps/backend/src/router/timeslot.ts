@@ -11,7 +11,6 @@ import { checkTableOwnership } from "../middlewares/checkTableOwnership";
 const router = Router();
 const typedRouter = router as any;
 
-// Simple endpoint to update a single timeslot
 typedRouter.post(
   "/update-one",
   authMiddleware,
@@ -32,12 +31,10 @@ typedRouter.post(
     const isOpen = parsedData.data.isOpen;
 
     try {
-      // Normalize date to midnight
       const normalizedDate = new Date(date);
       normalizedDate.setUTCHours(0, 0, 0, 0);
       const dateISO = normalizedDate.toISOString();
 
-      // Update or create the timeslot
       const result = await prismaClient.tableTimeSlot.upsert({
         where: {
           tableId_date_slotIndex: {
@@ -70,7 +67,6 @@ typedRouter.post(
   }
 );
 
-// Endpoint to batch update multiple time slots for multiple tables and dates
 typedRouter.post(
   "/batch-update",
   authMiddleware,
@@ -96,15 +92,12 @@ typedRouter.post(
     try {
       const results = [];
       const createdCount = { tables: 0, dates: 0, slots: 0, total: 0 };
-
-      // Process each combination of table, date, and slot
       for (const tableId of tableIds) {
         createdCount.tables++;
 
         for (const dateStr of dates) {
           createdCount.dates++;
 
-          // Normalize date to midnight
           const normalizedDate = new Date(dateStr);
           normalizedDate.setUTCHours(0, 0, 0, 0);
           const dateISO = normalizedDate.toISOString();
@@ -114,7 +107,6 @@ typedRouter.post(
             createdCount.total++;
 
             try {
-              // Update or create the timeslot
               const result = await prismaClient.tableTimeSlot.upsert({
                 where: {
                   tableId_date_slotIndex: {

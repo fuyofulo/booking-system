@@ -23,7 +23,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/restaurant", restaurantRouter);
-app.use("/api/v1/role", roleRouter);
+app.use("/api/v1/roles", roleRouter);
 app.use("/api/v1/restaurantUser", restaurantUserRouter);
 app.use("/api/v1/tables", tablesRouter);
 app.use("/api/v1/timeslot", timeslotRouter);

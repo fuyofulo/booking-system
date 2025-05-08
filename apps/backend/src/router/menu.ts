@@ -7,7 +7,6 @@ import { CreateMenuSchema, CreateDishSchema } from "@repo/schemas/types";
 const router = Router();
 const typedRouter = router as any;
 
-// Create a new menu
 typedRouter.post(
   "/create",
   authMiddleware,
@@ -29,7 +28,6 @@ typedRouter.post(
     const imageUrl = parsedData.data.imageUrl;
 
     try {
-      // Check if a menu with the same name already exists for this restaurant
       const existingMenu = await prismaClient.menu.findFirst({
         where: {
           restaurantId,
@@ -43,7 +41,6 @@ typedRouter.post(
         });
       }
 
-      // Create the new menu
       const newMenu = await prismaClient.menu.create({
         data: {
           name,
@@ -90,7 +87,6 @@ typedRouter.post("/dish/create",authMiddleware,checkPermission("canManageMenu"),
     const restaurantId = parsedData.data.restaurantId;
 
     try {
-      // Verify the menu exists and belongs to the restaurant
       const menu = await prismaClient.menu.findFirst({
         where: {
           id: menuId,
@@ -104,7 +100,6 @@ typedRouter.post("/dish/create",authMiddleware,checkPermission("canManageMenu"),
         });
       }
 
-      // Create the new dish
       const newDish = await prismaClient.dish.create({
         data: {
           name,
@@ -158,7 +153,6 @@ typedRouter.get("/getDishes", authMiddleware, async (req: Request, res: Response
   const restaurantId = req.query.restaurantId as string;
   const menuId = req.query.menuId as string;
 
-  // exam
 
   try {
     const dishes = await prismaClient.dish.findMany({

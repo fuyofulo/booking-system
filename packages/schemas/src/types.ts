@@ -32,6 +32,17 @@ export const CreateRoleSchema = z.object({
   canManageOrders: z.boolean().optional().default(false),
 });
 
+export const UpdateRolePermissionsSchema = z.object({
+  roleId: z.number().int().positive(),
+  restaurantId: z.number().int().positive(), // For security validation
+  canCreateRoles: z.boolean().optional(),
+  canManageTables: z.boolean().optional(),
+  canManageSlots: z.boolean().optional(),
+  canManageStaff: z.boolean().optional(),
+  canManageMenu: z.boolean().optional(),
+  canManageOrders: z.boolean().optional(),
+});
+
 // -------------------- Table --------------------
 
 export const CreateTableSchema = z.object({
@@ -118,7 +129,22 @@ export const OrderItemInput = z.object({
 export const CreateOrderSchema = z.object({
   restaurantId: z.number().int().positive(),
   tableId: z.number().int().positive(),
-  bookingId: z.number().int().positive(),
+  bookingId: z.number().int().positive(), // Required - each order is linked to a booking
   notes: z.string().optional(),
   items: z.array(OrderItemInput).min(1, "At least one item is required"),
+});
+
+// Valid status values for order items
+export const OrderItemStatusEnum = z.enum([
+  "pending",
+  "preparing",
+  "ready",
+  "served",
+  "cancelled"
+]);
+
+export const UpdateOrderItemStatusSchema = z.object({
+  orderItemIds: z.array(z.number().int().positive()).min(1, "At least one order item ID is required"),
+  status: OrderItemStatusEnum,
+  restaurantId: z.number().int().positive(), // For security validation
 });

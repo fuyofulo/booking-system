@@ -20,7 +20,6 @@ typedRouter.post("/create", authMiddleware, async (req: Request, res: Response) 
   const ownerId = req.userId;
 
   try {
-    // creating the restaurant
     const restaurant = await prismaClient.restaurant.create({
       data: {
         name: parsedData.data.name,
@@ -28,7 +27,6 @@ typedRouter.post("/create", authMiddleware, async (req: Request, res: Response) 
       },
     });
 
-    // creating the owner role for the restaurant
     const role = await prismaClient.role.create({
       data: {
         name: "Owner",
@@ -47,7 +45,6 @@ typedRouter.post("/create", authMiddleware, async (req: Request, res: Response) 
     });
 
 
-    // creating restaurant user 
     const restaurantUser = await prismaClient.restaurantUser.create({
       data: {
         userId: ownerId,
@@ -56,7 +53,6 @@ typedRouter.post("/create", authMiddleware, async (req: Request, res: Response) 
       },
     });
 
-    // returning appropriate data
     return res.json({
       message: "Restaurant created successfully",
       restaurant: {

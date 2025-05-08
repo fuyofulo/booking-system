@@ -1,20 +1,22 @@
 import { Router, Request, Response } from "express";
 import { authMiddleware } from "../middlewares/auth";
 import { checkPermission } from "../middlewares/checkPermission";
-import { CreateOrderSchema } from "@repo/schemas/types";
+import {
+  CreateOrderSchema,
+  UpdateOrderItemStatusSchema,
+} from "@repo/schemas/types";
 import { prismaClient } from "@repo/db/client";
 
 const router = Router();
 const typedRouter = router as any;
 
-// Create a new order
 typedRouter.post(
   "/create",
   authMiddleware,
   checkPermission("canManageOrders"),
   async (req: Request, res: Response) => {
     try {
-      // Validate input
+
       const parsedData = CreateOrderSchema.safeParse(req.body);
       if (!parsedData.success) {
         return res.status(400).json({
@@ -27,7 +29,7 @@ typedRouter.post(
       const { restaurantId, tableId, bookingId, notes, items } =
         parsedData.data;
 
-      // Verify the table belongs to the restaurant and the booking exists
+
       const booking = await prismaClient.booking.findFirst({
         where: {
           id: bookingId,
@@ -48,7 +50,7 @@ typedRouter.post(
         });
       }
 
-      // Fetch dish details for all items in the order
+
       const dishIds = items.map((item) => item.dishId);
       const dishes = await prismaClient.dish.findMany({
         where: {
@@ -57,7 +59,7 @@ typedRouter.post(
         },
       });
 
-      // Check if all dishes exist and belong to the restaurant
+
       if (dishes.length !== dishIds.length) {
         return res.status(404).json({
           success: false,
@@ -66,13 +68,13 @@ typedRouter.post(
         });
       }
 
-      // Create a map of dish IDs to prices
+
       const dishPricesMap = new Map();
       dishes.forEach((dish) => {
         dishPricesMap.set(dish.id, dish.price);
       });
 
-      // Calculate total amount
+
       let totalAmount = 0;
       const orderItems = items.map((item) => {
         const price = dishPricesMap.get(item.dishId);
@@ -87,15 +89,14 @@ typedRouter.post(
         };
       });
 
-      // Generate a unique order number (format: ORD-YYYYMMDD-XXXX)
+
       const today = new Date();
       const datePart = today.toISOString().slice(0, 10).replace(/-/g, "");
-      const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+      const randomPart = Math.floor(1000 + Math.random() * 9000);
       const orderNumber = `ORD-${datePart}-${randomPart}`;
 
-      // Create the order and its items in a transaction
+
       const order = await prismaClient.$transaction(async (tx) => {
-        // Create the order
         const newOrder = await tx.order.create({
           data: {
             orderNumber,
@@ -132,9 +133,8 @@ typedRouter.post(
   }
 );
 
-// Get all orders for a booking (for calculating bill total)
 typedRouter.post(
-  "/booking-orders",
+  "/get-booking-total",
   authMiddleware,
   checkPermission("canManageOrders"),
   async (req: Request, res: Response) => {
@@ -148,7 +148,7 @@ typedRouter.post(
         });
       }
 
-      // Get the booking to verify it exists and get the restaurant ID
+
       const booking = await prismaClient.booking.findUnique({
         where: { id: bookingId },
         include: {
@@ -168,7 +168,6 @@ typedRouter.post(
         });
       }
 
-      // Get all orders for this booking
       const orders = await prismaClient.order.findMany({
         where: { bookingId },
         include: {
@@ -188,7 +187,7 @@ typedRouter.post(
         },
       });
 
-      // Calculate the grand total across all orders
+
       const grandTotal = orders.reduce(
         (sum, order) => sum + Number(order.totalAmount),
         0
@@ -213,6 +212,116 @@ typedRouter.post(
       return res.status(500).json({
         success: false,
         message: "An error occurred while fetching booking orders",
+      });
+    }
+  }
+);
+
+typedRouter.post(
+  "/update-item-status",
+  authMiddleware,
+  checkPermission("canManageOrders"),
+  async (req: Request, res: Response) => {
+    try {
+      const parsedData = UpdateOrderItemStatusSchema.safeParse(req.body);
+      if (!parsedData.success) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid input data",
+          errors: parsedData.error.errors,
+        });
+      }
+
+      const { orderItemIds, status, restaurantId } = parsedData.data;
+
+      const orderItems = await prismaClient.orderItem.findMany({
+        where: {
+          id: { in: orderItemIds },
+          order: {
+            restaurantId,
+          },
+        },
+        include: {
+          order: {
+            select: {
+              id: true,
+              orderNumber: true,
+              restaurantId: true,
+            },
+          },
+        },
+      });
+
+
+      if (orderItems.length !== orderItemIds.length) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "One or more order items not found or don't belong to this restaurant",
+        });
+      }
+
+
+      const updatedItems = await prismaClient.$transaction(
+        orderItemIds.map((itemId) =>
+          prismaClient.orderItem.update({
+            where: { id: itemId },
+            data: { status },
+            include: {
+              dish: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          })
+        )
+      );
+
+      const affectedOrderIds = [
+        ...new Set(orderItems.map((item) => item.order.id)),
+      ];
+
+      for (const orderId of affectedOrderIds) {
+        const allOrderItems = await prismaClient.orderItem.findMany({
+          where: { orderId },
+        });
+
+        const allSameStatus = allOrderItems.every(
+          (item) => item.status === status
+        );
+
+        if (allSameStatus) {
+          let orderStatus = "received"; 
+
+
+          if (status === "pending") orderStatus = "received";
+          else if (status === "preparing") orderStatus = "preparing";
+          else if (status === "ready") orderStatus = "ready";
+          else if (status === "served") orderStatus = "completed";
+          else if (status === "cancelled") orderStatus = "cancelled";
+
+
+          await prismaClient.order.update({
+            where: { id: orderId },
+            data: { status: orderStatus },
+          });
+        }
+      }
+
+      return res.json({
+        success: true,
+        message: `Updated ${updatedItems.length} items to status: ${status}`,
+        data: {
+          updatedItems,
+          affectedOrders: affectedOrderIds,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating order item status:", error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while updating order item status",
       });
     }
   }

@@ -27,7 +27,7 @@ typedRouter.post(
     const customerPhone = parsedData.data.customerPhone;
 
     try {
-      // First check if the table belongs to the restaurant
+
       const tableExists = await prismaClient.table.findFirst({
         where: {
           id: tableId,
@@ -41,14 +41,12 @@ typedRouter.post(
         });
       }
 
-      // Convert YYYY-MM-DD to a proper Date object
       const parts = date.split("-").map(Number);
       const year = parts[0] || 0;
       const month = parts[1] || 1;
       const day = parts[2] || 1;
       const slotDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
-      // Step 1: Check if all slots are open in TableTimeSlot
       const existing = await prismaClient.tableTimeSlot.findMany({
         where: {
           tableId,
@@ -64,7 +62,6 @@ typedRouter.post(
         });
       }
 
-      // Create a single booking with multiple slot indices
       const booking = await prismaClient.booking.create({
         data: {
           tableId,
@@ -75,7 +72,7 @@ typedRouter.post(
         },
       });
 
-      // Mark the booked slots as closed
+
       await prismaClient.tableTimeSlot.updateMany({
         where: {
           tableId,
@@ -109,7 +106,6 @@ typedRouter.get(
         .json({ message: "Missing restaurantId or date query parameters" });
     }
 
-    // Convert YYYY-MM-DD to a proper Date object
     const parts = dateStr.split("-").map(Number);
     const year = parts[0] || 0;
     const month = parts[1] || 1;
@@ -175,7 +171,6 @@ typedRouter.get(
         .json({ message: "Missing restaurantId or date query parameters" });
     }
 
-    // Convert YYYY-MM-DD to a proper Date object
     const parts = dateStr.split("-").map(Number);
     const year = parts[0] || 0;
     const month = parts[1] || 1;
@@ -220,7 +215,6 @@ typedRouter.get(
         }),
       ]);
 
-      // Create a map to find booking by tableId and slotIndex
       const bookingMap = new Map<
         string,
         { customerName: string; customerPhone?: string }
@@ -233,7 +227,7 @@ typedRouter.get(
         });
       }
 
-      // Map slots by table
+
       const slotMap: Record<
         number,
         {
@@ -265,7 +259,7 @@ typedRouter.get(
         tableId: table.id,
         tableName: table.name,
         capacity: table.capacity,
-        timeSlots: slotMap[table.id] || [], // empty if no slots
+        timeSlots: slotMap[table.id] || [],
       }));
 
       return res.json({ tables: formatted });
@@ -276,7 +270,6 @@ typedRouter.get(
   }
 );
 
-// Get all booked slots in a restaurant
 typedRouter.get(
   "/booked",
   authMiddleware,
@@ -290,7 +283,7 @@ typedRouter.get(
     }
 
     try {
-      // First, get all tables in the restaurant
+
       const tables = await prismaClient.table.findMany({
         where: { restaurantId: Number(restaurantId) },
         select: { id: true, name: true, capacity: true },
@@ -298,7 +291,6 @@ typedRouter.get(
 
       const tableIds = tables.map((t) => t.id);
 
-      // Get all bookings for these tables
       const bookings = await prismaClient.booking.findMany({
         where: {
           tableId: { in: tableIds },
@@ -323,9 +315,8 @@ typedRouter.get(
         },
       });
 
-      // Instead of grouping, return a simple array of bookings with formatted dates
       const formattedBookings = bookings.map((booking) => {
-        const dateString = booking.date.toISOString().split("T")[0]; // YYYY-MM-DD format
+        const dateString = booking.date.toISOString().split("T")[0]; 
 
         return {
           id: booking.id,
