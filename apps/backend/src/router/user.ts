@@ -4,6 +4,7 @@ import { SignInSchema, SignUpSchema } from "@repo/schemas/types";
 import { JWT_SECRET } from "@repo/secrets/config";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { authMiddleware } from "../middlewares/auth";
 
 const router: any = Router();
 const typedRouter = router as any;
@@ -91,6 +92,52 @@ typedRouter.post("/signin", async (req: Request, res: Response) => {
   res.json({
     token,
   });
+});
+
+typedRouter.get("/me", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.userId;
+
+    const user = await prismaClient.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        restaurantUsers: {
+          include: {
+            restaurant: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const hasRestaurant =
+      user.restaurantUsers && user.restaurantUsers.length > 0;
+
+    return res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        hasRestaurant,
+        restaurants: user.restaurantUsers,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
 });
 
 export const userRouter = typedRouter;
