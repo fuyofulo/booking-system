@@ -1,128 +1,169 @@
 import { Router, Request, Response } from "express";
 import { authMiddleware } from "../middlewares/auth";
 import { checkPermission } from "../middlewares/checkPermission";
-import { updateTimeSlotsSchema } from "@repo/schemas/types";
+import {
+  UpdateOneSlotSchema,
+  BatchUpdateSlotsSchema,
+} from "@repo/schemas/types";
 import { prismaClient } from "@repo/db/client";
-
-const router: any = Router();
+import { z } from "zod";
+import { checkTableOwnership } from "../middlewares/checkTableOwnership";
+const router = Router();
 const typedRouter = router as any;
 
-typedRouter.post('/update', authMiddleware, checkPermission("canManageSlots"), async (req: Request, res: Response) => {
-
-    const body = req.body;
-    const parsedData = updateTimeSlotsSchema.safeParse(body);
-
+// Simple endpoint to update a single timeslot
+typedRouter.post(
+  "/update-one",
+  authMiddleware,
+  checkPermission("canManageSlots"),
+  checkTableOwnership,
+  async (req: Request, res: Response) => {
+    const data = req.body;
+    const parsedData = UpdateOneSlotSchema.safeParse(data);
     if (!parsedData.success) {
-        return res.json({
-            message: "Invalid inputs",
-        });
+      return res.status(400).json({
+        message: "Invalid inputs",
+      });
     }
 
-    const entries = parsedData.data.entries;
+    const tableId = parsedData.data.tableId;
+    const date = parsedData.data.date;
+    const slotIndex = parsedData.data.slotIndex;
+    const isOpen = parsedData.data.isOpen;
 
     try {
-        const results = [];
-        const allDesiredKeys = new Set<string>();
-        const tableDateSet = new Set<string>();
+      // Normalize date to midnight
+      const normalizedDate = new Date(date);
+      normalizedDate.setUTCHours(0, 0, 0, 0);
+      const dateISO = normalizedDate.toISOString();
 
-        for (let k = 0; k < entries.length; k++) {
-            const entry = entries[k];
-            const { tableIds, date, slotIndices, isOpen } = entry!;
+      // Update or create the timeslot
+      const result = await prismaClient.tableTimeSlot.upsert({
+        where: {
+          tableId_date_slotIndex: {
+            tableId,
+            date: dateISO,
+            slotIndex,
+          },
+        },
+        update: {
+          isOpen,
+        },
+        create: {
+          tableId,
+          date: dateISO,
+          slotIndex,
+          isOpen,
+        },
+      });
 
-            const normalizedDate = new Date(date);
-            normalizedDate.setUTCHours(0, 0, 0, 0);
-            const dateISO = normalizedDate.toISOString();
+      return res.json({
+        message: "Time slot updated successfully",
+        slot: result,
+      });
+    } catch (err) {
+      console.error("Error updating time slot:", err);
+      return res.status(500).json({
+        message: "Failed to update time slot",
+      });
+    }
+  }
+);
 
-            for (let i = 0; i < tableIds.length; i++) {
-                const tableId = tableIds[i];
-                const tableDateKey = `${tableId}|${dateISO}`;
-                tableDateSet.add(tableDateKey);
+// Endpoint to batch update multiple time slots for multiple tables and dates
+typedRouter.post(
+  "/batch-update",
+  authMiddleware,
+  checkPermission("canManageSlots"),
+  checkTableOwnership,
+  async (req: Request, res: Response) => {
+    const data = req.body;
+    const parsedData = BatchUpdateSlotsSchema.safeParse(data);
 
-                for (let j = 0; j < slotIndices.length; j++) {
-                    const slotIndex = slotIndices[j];
+    if (!parsedData.success) {
+      return res.status(400).json({
+        message: "Invalid inputs",
+        errors: parsedData.error.format(),
+      });
+    }
 
-                    if (typeof slotIndex !== 'number' || typeof tableId !== 'number') {
-                        console.error("Invalid tableId or slotIndex:", tableId, slotIndex);
-                        continue;
-                    }
+    const tableIds = parsedData.data.tableIds;
+    const dates = parsedData.data.dates;
+    const slotIndices = parsedData.data.slotIndices;
+    const isOpen = parsedData.data.isOpen;
+    const restaurantId = parsedData.data.restaurantId;
 
-                    const key = `${tableId}-${dateISO}-${slotIndex}`;
-                    allDesiredKeys.add(key);
+    try {
+      const results = [];
+      const createdCount = { tables: 0, dates: 0, slots: 0, total: 0 };
 
-                    try {
-                        const result = await prismaClient.tableTimeSlot.upsert({
-                            where: {
-                                tableId_date_slotIndex: {
-                                    tableId,
-                                    date: dateISO,
-                                    slotIndex,
-                                },
-                            },
-                            update: {
-                                isOpen,
-                            },
-                            create: {
-                                tableId,
-                                date: dateISO,
-                                slotIndex,
-                                isOpen,
-                            },
-                        });
+      // Process each combination of table, date, and slot
+      for (const tableId of tableIds) {
+        createdCount.tables++;
 
-                        results.push(result);
+        for (const dateStr of dates) {
+          createdCount.dates++;
 
-                    } catch (err) {
-                        console.log("Error upserting slot:", { tableId, slotIndex, err });
-                    }
-                }
-            }
-        }
+          // Normalize date to midnight
+          const normalizedDate = new Date(dateStr);
+          normalizedDate.setUTCHours(0, 0, 0, 0);
+          const dateISO = normalizedDate.toISOString();
 
-        // Fetch and delete stale slots
-        const staleSlotIds: number[] = [];
+          for (const slotIndex of slotIndices) {
+            createdCount.slots++;
+            createdCount.total++;
 
-        for (const tableDateKey of tableDateSet) {
-            const [tableIdStr, dateISO] = tableDateKey.split("|");
-            const tableId = Number(tableIdStr);
-
-            const existingSlots = await prismaClient.tableTimeSlot.findMany({
+            try {
+              // Update or create the timeslot
+              const result = await prismaClient.tableTimeSlot.upsert({
                 where: {
+                  tableId_date_slotIndex: {
                     tableId,
                     date: dateISO,
+                    slotIndex,
+                  },
                 },
-            });
+                update: {
+                  isOpen,
+                },
+                create: {
+                  tableId,
+                  date: dateISO,
+                  slotIndex,
+                  isOpen,
+                },
+              });
 
-            for (const slot of existingSlots) {
-                const key = `${slot.tableId}-${slot.date.toISOString()}-${slot.slotIndex}`;
-                if (!allDesiredKeys.has(key)) {
-                    staleSlotIds.push(slot.id);
-                }
+              results.push(result);
+            } catch (err) {
+              console.error("Error upserting time slot:", {
+                tableId,
+                dateISO,
+                slotIndex,
+                err,
+              });
             }
+          }
         }
+      }
 
-        if (staleSlotIds.length > 0) {
-            await prismaClient.tableTimeSlot.deleteMany({
-                where: {
-                    id: { in: staleSlotIds },
-                },
-            });
-        }
-
-        return res.json({
-            message: "Time slots updated successfully",
-            results,
-            deletedSlotIds: staleSlotIds,
-        });
-
+      return res.json({
+        message: "Batch time slot update successful",
+        stats: {
+          tablesProcessed: tableIds.length,
+          datesProcessed: dates.length,
+          slotsProcessed: slotIndices.length,
+          totalSlotsUpdated: results.length,
+        },
+        results: results, 
+      });
     } catch (err) {
-        console.error("Error during time slot update:", err);
-        return res.json({
-            message: "Failed to update time slots",
-        });
+      console.error("Error during batch update of time slots:", err);
+      return res.status(500).json({
+        message: "Failed to update time slots",
+      });
     }
-});
-
-
-
+  }
+);
 
 export const timeslotRouter = typedRouter;

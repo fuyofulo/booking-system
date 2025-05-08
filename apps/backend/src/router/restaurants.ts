@@ -34,13 +34,15 @@ typedRouter.post("/create", authMiddleware, async (req: Request, res: Response) 
         name: "Owner",
         restaurant: {
           connect: {
-            id: restaurant.id,  // Connect the role to the existing restaurant by its ID
+            id: restaurant.id, 
           },
         },
         canCreateRoles: true,
         canManageTables: true,
         canManageSlots: true,
         canManageStaff: true,
+        canManageMenu: true,
+        canManageOrders: true,
       },
     });
 

@@ -8,81 +8,163 @@ datasource db {
 }
 
 model User {
-  id              String            @id @default(uuid())
-  email           String            @unique
+  id              String           @id @default(uuid())
+  email           String           @unique
   name            String
   password        String
-  restaurants     Restaurant[]      // A user can have multiple restaurants (owned by them)
-  restaurantUsers RestaurantUser[]  // A user can have multiple roles in various restaurants
+  restaurants     Restaurant[] // A user can have multiple restaurants (owned by them)
+  restaurantUsers RestaurantUser[] // A user can have multiple roles in various restaurants
 }
 
 model Restaurant {
-  id              Int               @id @default(autoincrement())
-  name            String            @unique
-  ownerId         String            // Owner's userId
-  owner           User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  restaurantUsers RestaurantUser[]  // A restaurant can have multiple users (staff, etc.)
-  tables          Table[]           // A restaurant can have multiple tables
-  roles           Role[]            // A restaurant can have multiple roles (e.g. Owner, Manager)
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  ownerId         String // Owner's userId
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  restaurantUsers RestaurantUser[] // A restaurant can have multiple users (staff, etc.)
+  tables          Table[] // A restaurant can have multiple tables
+  roles           Role[] // A restaurant can have multiple roles (e.g. Owner, Manager)
+  menus           Menu[] // A restaurant can have multiple menus
+  dishes          Dish[] // A restaurant can have multiple dishes
+  Order           Order[]
 }
 
 model Role {
-  id               Int      @id @default(autoincrement())
-  name             String   // Role name (e.g. Owner, Manager)
-  canCreateRoles   Boolean
-  canManageTables  Boolean
-  canManageSlots   Boolean
-  canManageStaff   Boolean
-  restaurantId     Int
-  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  
-  restaurantUsers  RestaurantUser[]  // Add the inverse relation here
+  id              Int        @id @default(autoincrement())
+  name            String // Role name (e.g. Owner, Manager)
+  canCreateRoles  Boolean    @default(false)
+  canManageTables Boolean    @default(false)
+  canManageSlots  Boolean    @default(false)
+  canManageStaff  Boolean    @default(false)
+  canManageMenu   Boolean    @default(false)
+  canManageOrders Boolean    @default(false)
+  restaurantId    Int
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  restaurantUsers RestaurantUser[] // Add the inverse relation here
 }
 
 model RestaurantUser {
-  id           Int       @id @default(autoincrement())
+  id           Int    @id @default(autoincrement())
   userId       String
   restaurantId Int
   roleId       Int
 
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 }
 
 model Table {
-  id           Int         @id @default(autoincrement())
+  id           Int    @id @default(autoincrement())
   restaurantId Int
   name         String
   capacity     Int
 
-  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  bookings     Booking[]   // Each table can have multiple bookings
-  timeSlots    TableTimeSlot[] // Each table can have multiple time slots for availability
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  bookings   Booking[] // Each table can have multiple bookings
+  timeSlots  TableTimeSlot[] // Each table can have multiple time slots for availability
+  Order      Order[]
 }
 
 model TableTimeSlot {
   id        Int      @id @default(autoincrement())
   tableId   Int
   date      DateTime // Normalized to midnight (YYYY-MM-DDT00:00:00Z)
-  slotIndex Int      // 0–47 for 30-minute intervals in a day
-  isOpen    Boolean  // Whether this table is available in this slot
+  slotIndex Int // 0–47 for 30-minute intervals in a day
+  isOpen    Boolean // Whether this table is available in this slot
 
-  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
   @@unique([tableId, date, slotIndex]) // Prevent duplicate slots for the same table on the same date
 }
 
 model Booking {
-  id            Int       @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   customerName  String
   customerPhone String?
   tableId       Int
-  date          DateTime  // For easier querying (redundant but practical)
-  slotIndex     Int       // Matches slot booked
-  createdAt     DateTime  @default(now())  // Automatically set when the booking is created
+  date          DateTime // Date of the booking (normalized to midnight)
+  slotIndices   Int[] // Array of slot indices
+  createdAt     DateTime @default(now())
+  orders        Order[] // Relation to orders made during this booking
 
-  table         Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  @@index([date, slotIndex])  // Index for querying bookings by date and time slot
+  @@index([date]) // Index for querying bookings by date
+}
+
+// Menu model (e.g., Breakfast Menu, Lunch Menu, Dinner Menu)
+model Menu {
+  id           Int     @id @default(autoincrement())
+  name         String
+  description  String?
+  imageUrl     String?
+  restaurantId Int
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  dishes     Dish[] // Each menu can have multiple dishes
+
+  @@unique([restaurantId, name]) // Prevent duplicate menu names within the same restaurant
+}
+
+// Dish model (individual dishes/drinks)
+model Dish {
+  id           Int     @id @default(autoincrement())
+  name         String
+  description  String?
+  price        Decimal @db.Decimal(10, 2) // Base price for standard size/portion
+  imageUrl     String?
+  isAvailable  Boolean @default(true)
+  calories     Int?
+  isVegetarian Boolean @default(false)
+  displayOrder Int     @default(0) // For controlling display order within a menu
+  menuId       Int
+  restaurantId Int
+
+  menu       Menu        @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[] // Each dish can be ordered multiple times
+
+  @@index([menuId]) // Index for faster queries by menu
+  @@index([restaurantId]) // Index for faster queries by restaurant
+}
+
+// Order model for tracking customer orders
+model Order {
+  id           Int     @id @default(autoincrement())
+  orderNumber  String  @unique // Formatted order number for display
+  restaurantId Int
+  tableId      Int // Required table reference
+  bookingId    Int? // Optional booking reference (may be null for walk-in orders)
+  customerName String?
+  status       String // "pending", "preparing", "ready", "served", "completed", "cancelled"
+  totalAmount  Decimal @db.Decimal(10, 2)
+  notes        String?
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  table      Table       @relation(fields: [tableId], references: [id])
+  booking    Booking?    @relation(fields: [bookingId], references: [id])
+  items      OrderItem[]
+
+  @@index([restaurantId])
+  @@index([tableId])
+  @@index([bookingId])
+  @@index([status])
+}
+
+// OrderItem model for individual items in an order
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  dishId    Int
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  status    String // "pending", "preparing", "ready", "served", "cancelled"
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dish  Dish  @relation(fields: [dishId], references: [id])
+
+  @@index([orderId])
+  @@index([dishId])
 }

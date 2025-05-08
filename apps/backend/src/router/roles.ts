@@ -25,6 +25,8 @@ typedRouter.post("/create", authMiddleware, checkPermission("canCreateRoles"), a
   const canManageTables = parsedData.data.canManageTables;
   const canManageSlots = parsedData.data.canManageSlots;
   const canManageStaff = parsedData.data.canManageStaff;
+  const canManageMenu = parsedData.data.canManageMenu;
+  const canManageOrders = parsedData.data.canManageOrders;
 
   try {
     const newRole = await prismaClient.role.create({
@@ -32,13 +34,15 @@ typedRouter.post("/create", authMiddleware, checkPermission("canCreateRoles"), a
         name,
         restaurant: {
           connect: {
-            id: restaurantId,  // Connect the role to the existing restaurant by its ID
+            id: restaurantId, 
           },
         },
         canCreateRoles: canCreateRoles ?? false,
         canManageTables: canManageTables ?? false,
         canManageSlots: canManageSlots ?? false,
         canManageStaff: canManageStaff ?? false,
+        canManageMenu: canManageMenu ?? false,
+        canManageOrders: canManageOrders ?? false,
       },
     });
 

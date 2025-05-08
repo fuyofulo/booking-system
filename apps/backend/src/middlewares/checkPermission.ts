@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prismaClient } from "@repo/db/client";
 
 // List only the permission-related fields
-type RolePermission = "canCreateRoles" | "canManageTables" | "canManageSlots" | "canManageStaff";
+type RolePermission = "canCreateRoles" | "canManageTables" | "canManageSlots" | "canManageStaff" | "canManageMenu" | "canManageOrders";
 
 export function checkPermission(permission: RolePermission) {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -30,7 +30,7 @@ export function checkPermission(permission: RolePermission) {
   
       const userRole = restaurantUser.role;
 
-      if (!userRole[permission]) {
+      if (!userRole[permission as keyof typeof userRole]) {
         return res.status(403).json({ message: `You do not have permission to ${permission}` });
       }
 
