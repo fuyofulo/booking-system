@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { userRouter } from "./router/user";
 import { restaurantRouter } from "./router/restaurants";
 import { roleRouter } from "./router/roles";
@@ -10,10 +11,14 @@ import { generalRouter } from "./router/general";
 import { vapiRouter } from "./router/vapi";
 import { menuRouter } from "./router/menu";
 import { ordersRouter } from "./router/orders";
+
 const app = express();
+app.use(cors());
 app.use(express.json());
 
-app.listen(7000);
+app.listen(7000, () => {
+  console.log("Server running on port 7000");
+});
 
 app.get("/", (req, res) => {
   res.json({

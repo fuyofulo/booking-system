@@ -10,14 +10,18 @@ import { checkPermission } from "../middlewares/checkPermission";
 const router: any = Router();
 const typedRouter = router as any;
 
-typedRouter.post("/create", authMiddleware, checkPermission("canCreateRoles"), async (req: Request, res: Response) => {
-  const data = req.body;
-  const parsedData = CreateRoleSchema.safeParse(data);
-  if (!parsedData.success) {
-    return res.json({
-      message: "enter proper data",
-    });
-  }
+typedRouter.post(
+  "/create",
+  authMiddleware,
+  checkPermission("canCreateRoles"),
+  async (req: Request, res: Response) => {
+    const data = req.body;
+    const parsedData = CreateRoleSchema.safeParse(data);
+    if (!parsedData.success) {
+      return res.json({
+        message: "enter proper data",
+      });
+    }
 
     // @ts-ignore
     const userId = req.userId;
@@ -141,6 +145,79 @@ typedRouter.post(
         message: "An error occurred while updating role permissions",
       });
     }
+  }
+);
+
+typedRouter.get(
+  "/getRoles/:restaurantId",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    const restaurantId = req.params.restaurantId;
+    const parsedRestaurantId = parseInt(restaurantId!);
+    const roles = await prismaClient.role.findMany({
+      where: {
+        restaurantId: parsedRestaurantId,
+      },
+    });
+
+    return res.json({
+      message: "Roles fetched successfully",
+      roles,
+    });
+  }
+);
+
+typedRouter.post(
+  "/change",
+  authMiddleware,
+  checkPermission("canManageStaff"),
+  async (req: Request, res: Response) => {
+    const { userId, restaurantId, newRoleId } = req.body;
+    //@ts-ignore
+    const currentUserId = req.userId;
+
+    // Check if the new role exists and belongs to the restaurant
+    const newRole = await prismaClient.role.findFirst({
+      where: {
+        id: newRoleId,
+        restaurantId: restaurantId,
+      },
+    });
+
+    if (!newRole) {
+      return res.status(400).json({
+        message: "Invalid role ID or role doesn't belong to this restaurant",
+      });
+    }
+
+    // Find the RestaurantUser record for the target user
+    const restaurantUser = await prismaClient.restaurantUser.findFirst({
+      where: {
+        userId: userId, // Use the userId from request body, not the authenticated user
+        restaurantId: restaurantId,
+      },
+    });
+
+    if (!restaurantUser) {
+      return res
+        .status(404)
+        .json({ message: "Target user is not part of this restaurant" });
+    }
+
+    // Update the target user's role using the id
+    const updatedUserRestaurant = await prismaClient.restaurantUser.update({
+      where: {
+        id: restaurantUser.id,
+      },
+      data: {
+        roleId: newRoleId,
+      },
+      include: {
+        role: true,
+      },
+    });
+
+    return res.json(updatedUserRestaurant);
   }
 );
 

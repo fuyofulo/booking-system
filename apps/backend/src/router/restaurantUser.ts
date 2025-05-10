@@ -71,23 +71,61 @@ typedRouter.post(
   }
 );
 
-typedRouter.post(
-  "/getAll",
+typedRouter.get(
+  "/getAll/:restaurantId",
   authMiddleware,
   async (req: Request, res: Response) => {
-    const restaurantId = req.body.restaurantId;
+    const restaurantId = req.params.restaurantId;
 
     const users = await prismaClient.restaurantUser.findMany({
       where: {
-        restaurantId: restaurantId,
+        restaurantId: parseInt(restaurantId!),
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        role: {
+          select: {
+            id: true,
+            name: true,
+            canCreateRoles: true,
+            canManageSlots: true,
+            canManageStaff: true,
+            canManageMenu: true,
+            canManageOrders: true,
+            canManageTables: true
+          },
+        },
       },
     });
 
     return res.json(users);
   }
 );
+
+typedRouter.post("/me", authMiddleware, async (req: Request, res: Response) => {
+  const restaurantId = req.body.restaurantId;
+  //@ts-ignore
+  const userId = req.userId;
+
+  const user = await prismaClient.restaurantUser.findFirst({
+    where: {
+      userId: userId,
+      restaurantId: restaurantId,
+    },
+    include: {
+      role: true,
+    },
+  });
+
+  return res.json(user);
+});
+
+
 
 export const restaurantUserRouter = typedRouter;

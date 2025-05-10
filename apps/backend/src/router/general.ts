@@ -16,5 +16,26 @@ typedRouter.get('/users', async (req: Request, res: Response) => {
 
 })
 
+typedRouter.post('/check-email', async (req: Request, res: Response) => {
+
+    const { email } = req.body;
+
+    const user = await prismaClient.user.findFirst({
+        where: {
+            email: email
+        }
+    })
+
+    if(!user) {
+        return res.json({
+            message: "Email not found"
+        })
+    }
+
+    return res.json({
+        message: "Email found"
+    })
+})
+
 
 export const generalRouter = typedRouter;
