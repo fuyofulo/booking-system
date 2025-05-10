@@ -106,6 +106,14 @@ export const CreateMenuSchema = z.object({
   imageUrl: z.string().url("Valid image URL is required").optional(),
 });
 
+export const UpdateMenuSchema = z.object({
+  menuId: z.number().int().positive(),
+  name: z.string().min(1, "Menu name is required"),
+  description: z.string().optional(),
+  restaurantId: z.number().int().positive(),
+  imageUrl: z.string().url("Valid image URL is required").optional(),
+});
+
 //works
 export const CreateDishSchema = z.object({
   name: z.string().min(1, "Dish name is required"),
@@ -115,6 +123,19 @@ export const CreateDishSchema = z.object({
   isAvailable: z.boolean().optional().default(true),
   calories: z.number().int().positive().optional(),
   isVegetarian: z.boolean().optional().default(false),
+  menuId: z.number().int().positive(),
+  restaurantId: z.number().int().positive(),
+});
+
+export const UpdateDishSchema = z.object({
+  dishId: z.number().int().positive(),
+  name: z.string().min(1, "Dish name is required"),
+  description: z.string().optional(),
+  price: z.number().positive("Price must be a positive number"),
+  imageUrl: z.string().url("Valid image URL is required").optional(),
+  isAvailable: z.boolean(),
+  calories: z.number().int().positive().optional(),
+  isVegetarian: z.boolean(),
   menuId: z.number().int().positive(),
   restaurantId: z.number().int().positive(),
 });
@@ -140,11 +161,13 @@ export const OrderItemStatusEnum = z.enum([
   "preparing",
   "ready",
   "served",
-  "cancelled"
+  "cancelled",
 ]);
 
 export const UpdateOrderItemStatusSchema = z.object({
-  orderItemIds: z.array(z.number().int().positive()).min(1, "At least one order item ID is required"),
+  orderItemIds: z
+    .array(z.number().int().positive())
+    .min(1, "At least one order item ID is required"),
   status: OrderItemStatusEnum,
   restaurantId: z.number().int().positive(), // For security validation
 });

@@ -126,6 +126,11 @@ const navigationItems = [
     url: "/schedule",
   },
   {
+    title: "Tables",
+    icon: CalendarDays,
+    url: "/tables",
+  },
+  {
     title: "Staff",
     icon: Users,
     url: "/staff",

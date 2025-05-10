@@ -36,7 +36,7 @@ export const RESTAURANT_USER_URLS = {
 
 // Table URLs
 export const TABLE_URLS = {
-  CREATE: `${API_BASE_URL}/tables`,
+  CREATE: `${API_BASE_URL}/tables/create`,
   GET_ALL: `${API_BASE_URL}/tables`,
   GET_BY_ID: (id: number) => `${API_BASE_URL}/tables/${id}`,
   UPDATE: (id: number) => `${API_BASE_URL}/tables/${id}`,
@@ -45,28 +45,30 @@ export const TABLE_URLS = {
 
 // Booking URLs
 export const BOOKING_URLS = {
-  CREATE: `${API_BASE_URL}/bookings`,
+  CREATE: `${API_BASE_URL}/bookings/book`,
   GET_ALL: `${API_BASE_URL}/bookings`,
   GET_BY_ID: (id: number) => `${API_BASE_URL}/bookings/${id}`,
-  UPDATE: (id: number) => `${API_BASE_URL}/bookings/${id}`,
-  DELETE: (id: number) => `${API_BASE_URL}/bookings/${id}`,
+  BOOKED: `${API_BASE_URL}/bookings/booked`,
+  AVAILABLE: `${API_BASE_URL}/bookings/available`,
+  GET_TIMESLOTS: `${API_BASE_URL}/bookings/timeslots`,
 };
 
 // TimeSlot URLs
 export const TIMESLOT_URLS = {
-  UPDATE_ONE: `${API_BASE_URL}/timeslots`,
-  BATCH_UPDATE: `${API_BASE_URL}/timeslots/batch`,
+  UPDATE_ONE: `${API_BASE_URL}/timeslot/update-one`,
+  BATCH_UPDATE: `${API_BASE_URL}/timeslot/batch-update`,
   GET_BY_TABLE_DATE: (tableId: number, date: string) =>
-    `${API_BASE_URL}/timeslots/table/${tableId}/date/${date}`,
+    `${API_BASE_URL}/timeslot/table/${tableId}/date/${date}`,
 };
 
 // Menu URLs
 export const MENU_URLS = {
-  CREATE: `${API_BASE_URL}/menus`,
-  GET_ALL: `${API_BASE_URL}/menus`,
-  GET_BY_ID: (id: number) => `${API_BASE_URL}/menus/${id}`,
-  UPDATE: (id: number) => `${API_BASE_URL}/menus/${id}`,
-  DELETE: (id: number) => `${API_BASE_URL}/menus/${id}`,
+  CREATE_MENU: `${API_BASE_URL}/menu/create`,
+  GET_MENUS: `${API_BASE_URL}/menu/getMenus`,
+  GET_DISHES: `${API_BASE_URL}/menu/getDishes`,
+  CREATE_DISH: `${API_BASE_URL}/menu/dish/create`,
+  UPDATE_MENU: `${API_BASE_URL}/menu/update-menu`,
+  UPDATE_DISH: `${API_BASE_URL}/menu/update-dish`,
 };
 
 // Dish URLs

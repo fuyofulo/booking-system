@@ -147,12 +147,90 @@ typedRouter.post(
           slotsProcessed: slotIndices.length,
           totalSlotsUpdated: results.length,
         },
-        results: results, 
+        results: results,
       });
     } catch (err) {
       console.error("Error during batch update of time slots:", err);
       return res.status(500).json({
         message: "Failed to update time slots",
+      });
+    }
+  }
+);
+
+// Add endpoint to get time slots for a specific table and date
+typedRouter.get(
+  "/table/:tableId/date/:date",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const tableId = parseInt(req.params.tableId!);
+      const dateStr = req.params.date;
+
+      if (isNaN(tableId)) {
+        return res.status(400).json({
+          message: "Invalid table ID",
+        });
+      }
+
+      // Validate date format (YYYY-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr!)) {
+        return res.status(400).json({
+          message: "Invalid date format. Use YYYY-MM-DD",
+        });
+      }
+
+      const normalizedDate = new Date(dateStr!);
+      normalizedDate.setUTCHours(0, 0, 0, 0);
+      const dateISO = normalizedDate.toISOString();
+
+      // Get the table to check if user has access to this restaurant
+      const table = await prismaClient.table.findUnique({
+        where: { id: tableId },
+        include: { restaurant: true },
+      });
+
+      if (!table) {
+        return res.status(404).json({
+          message: "Table not found",
+        });
+      }
+
+      // Check if user has access to this restaurant
+      // @ts-ignore
+      const userId = req.user.id;
+      const restaurantUser = await prismaClient.restaurantUser.findFirst({
+        where: {
+          userId,
+          restaurantId: table.restaurantId,
+        },
+      });
+
+      if (!restaurantUser) {
+        return res.status(403).json({
+          message: "You don't have access to this restaurant",
+        });
+      }
+
+      // Get time slots for this table and date
+      const timeSlots = await prismaClient.tableTimeSlot.findMany({
+        where: {
+          tableId,
+          date: dateISO,
+        },
+        orderBy: {
+          slotIndex: "asc",
+        },
+      });
+
+      return res.json({
+        message: "Time slots retrieved successfully",
+        timeSlots,
+      });
+    } catch (err) {
+      console.error("Error retrieving time slots:", err);
+      return res.status(500).json({
+        message: "Failed to retrieve time slots",
       });
     }
   }
