@@ -27,7 +27,6 @@ typedRouter.post(
     const customerPhone = parsedData.data.customerPhone;
 
     try {
-
       const tableExists = await prismaClient.table.findFirst({
         where: {
           id: tableId,
@@ -71,7 +70,6 @@ typedRouter.post(
           customerPhone,
         },
       });
-
 
       await prismaClient.tableTimeSlot.updateMany({
         where: {
@@ -227,7 +225,6 @@ typedRouter.get(
         });
       }
 
-
       const slotMap: Record<
         number,
         {
@@ -283,7 +280,6 @@ typedRouter.get(
     }
 
     try {
-
       const tables = await prismaClient.table.findMany({
         where: { restaurantId: Number(restaurantId) },
         select: { id: true, name: true, capacity: true },
@@ -316,7 +312,7 @@ typedRouter.get(
       });
 
       const formattedBookings = bookings.map((booking) => {
-        const dateString = booking.date.toISOString().split("T")[0]; 
+        const dateString = booking.date.toISOString().split("T")[0];
 
         return {
           id: booking.id,
@@ -338,6 +334,87 @@ typedRouter.get(
     } catch (error) {
       console.error("Error fetching booked slots:", error);
       return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+// Get bookings by date
+typedRouter.get(
+  "/by-date",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const restaurantId = req.query.restaurantId as string;
+      const dateStr = req.query.date as string;
+
+      if (!restaurantId || !dateStr) {
+        return res
+          .status(400)
+          .json({ message: "Missing restaurantId or date query parameters" });
+      }
+
+      // Parse date string to Date object
+      const parts = dateStr.split("-").map(Number);
+      const year = parts[0] || 0;
+      const month = parts[1] || 1;
+      const day = parts[2] || 1;
+      const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+
+      // Verify user has access to this restaurant
+      const userId = (req as any).userId;
+      const restaurantUser = await prismaClient.restaurantUser.findFirst({
+        where: {
+          userId,
+          restaurantId: Number(restaurantId),
+        },
+      });
+
+      if (!restaurantUser) {
+        return res.status(403).json({
+          message: "You don't have access to this restaurant",
+        });
+      }
+
+      // Find all tables for this restaurant
+      const tables = await prismaClient.table.findMany({
+        where: { restaurantId: Number(restaurantId) },
+        select: { id: true, name: true, capacity: true },
+      });
+
+      const tableIds = tables.map((t) => t.id);
+
+      // Get all bookings for this date at this restaurant
+      const bookings = await prismaClient.booking.findMany({
+        where: {
+          date,
+          tableId: { in: tableIds },
+        },
+        include: {
+          table: {
+            select: {
+              name: true,
+              capacity: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      return res.json({
+        success: true,
+        bookings,
+        count: bookings.length,
+        date: dateStr,
+      });
+    } catch (error) {
+      console.error("Error fetching bookings by date:", error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while fetching bookings",
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 );
