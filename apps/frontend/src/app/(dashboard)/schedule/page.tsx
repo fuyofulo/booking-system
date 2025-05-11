@@ -12,14 +12,12 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import {
-  addDays,
   format,
   startOfWeek,
   endOfWeek,
-  eachDayOfInterval,
-  isSameDay,
+  eachDayOfInterval
 } from "date-fns";
-import { CalendarClock, Clock, Loader2, Save, Info } from "lucide-react";
+import { Clock, Loader2, Save, Info } from "lucide-react";
 
 // Time slot utilities
 const slotIndexToTime = (slotIndex: number) => {
@@ -58,19 +56,6 @@ interface Table {
   restaurantId: number;
 }
 
-interface TimeSlot {
-  id: number;
-  tableId: number;
-  date: string;
-  slotIndex: number;
-  isOpen: boolean;
-}
-
-interface DateRange {
-  from: Date;
-  to?: Date;
-}
-
 // Enhanced structure to track both open and booked slots
 interface DaySchedule {
   openSlots: number[];
@@ -88,7 +73,6 @@ export default function SchedulePage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<number[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [tabValue, setTabValue] = useState<string>("view");
@@ -102,7 +86,6 @@ export default function SchedulePage() {
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
 
   // For batch updates
-  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // Default Mon-Fri
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedDateMode, setSelectedDateMode] = useState<"single" | "range">(

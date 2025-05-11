@@ -1,95 +1,95 @@
 // Base API URL - can be configured based on environment
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
 
 // User URLs
 export const USER_URLS = {
-  SIGN_UP: `${API_BASE_URL}/user/signup`,
-  SIGN_IN: `${API_BASE_URL}/user/signin`,
-  GET_USER: `${API_BASE_URL}/user/me`,
+  SIGN_UP: `${API_BASE_URL}/api/v1/user/signup`,
+  SIGN_IN: `${API_BASE_URL}/api/v1/user/signin`,
+  GET_USER: `${API_BASE_URL}/api/v1/user/me`,
 };
 
 // General URLs
 export const GENERAL_URLS = {
-  CHECK_EMAIL: `${API_BASE_URL}/general/check-email`,
+  CHECK_EMAIL: `${API_BASE_URL}/api/v1/general/check-email`,
 };
 
 // Restaurant URLs
 export const RESTAURANT_URLS = {
-  CREATE: `${API_BASE_URL}/restaurant/create`,
+  CREATE: `${API_BASE_URL}/api/v1/restaurant/create`,
 };
 
 // Role URLs
 export const ROLE_URLS = {
-  CREATE_ROLE: `${API_BASE_URL}/roles/create`,
-  GET_ROLES: `${API_BASE_URL}/roles/getRoles`,
-  UPDATE_ROLE: `${API_BASE_URL}/roles/update`,
-  CHANGE_ROLE: `${API_BASE_URL}/roles/change`,
+  CREATE_ROLE: `${API_BASE_URL}/api/v1/roles/create`,
+  GET_ROLES: `${API_BASE_URL}/api/v1/roles/getRoles`,
+  UPDATE_ROLE: `${API_BASE_URL}/api/v1/roles/update`,
+  CHANGE_ROLE: `${API_BASE_URL}/api/v1/roles/change`,
 };
 
 export const RESTAURANT_USER_URLS = {
   GET_STAFF: (restaurantId: number) =>
-    `${API_BASE_URL}/restaurantUser/getAll/${restaurantId}`,
-  CHANGE_ROLE: `${API_BASE_URL}/restaurantUser/changeRole`,
-  ADD_STAFF: `${API_BASE_URL}/restaurantUser/create`,
+    `${API_BASE_URL}/api/v1/restaurantUser/getAll/${restaurantId}`,
+  CHANGE_ROLE: `${API_BASE_URL}/api/v1/restaurantUser/changeRole`,
+  ADD_STAFF: `${API_BASE_URL}/api/v1/restaurantUser/create`,
 };
 
 // Table URLs
 export const TABLE_URLS = {
-  CREATE: `${API_BASE_URL}/tables/create`,
-  GET_ALL: `${API_BASE_URL}/tables`,
-  GET_BY_ID: (id: number) => `${API_BASE_URL}/tables/${id}`,
-  UPDATE: (id: number) => `${API_BASE_URL}/tables/${id}`,
-  DELETE: (id: number) => `${API_BASE_URL}/tables/${id}`,
+  CREATE: `${API_BASE_URL}/api/v1/tables/create`,
+  GET_ALL: `${API_BASE_URL}/api/v1/tables`,
+  GET_BY_ID: (id: number) => `${API_BASE_URL}/api/v1/tables/${id}`,
+  UPDATE: (id: number) => `${API_BASE_URL}/api/v1/tables/${id}`,
+  DELETE: (id: number) => `${API_BASE_URL}/api/v1/tables/${id}`,
 };
 
 // Booking URLs
 export const BOOKING_URLS = {
-  CREATE: `${API_BASE_URL}/bookings/book`,
-  GET_ALL: `${API_BASE_URL}/bookings`,
-  GET_BY_ID: (id: number) => `${API_BASE_URL}/bookings/${id}`,
-  BOOKED: `${API_BASE_URL}/bookings/booked`,
-  AVAILABLE: `${API_BASE_URL}/bookings/available`,
-  GET_TIMESLOTS: `${API_BASE_URL}/bookings/timeslots`,
+  CREATE: `${API_BASE_URL}/api/v1/bookings/book`,
+  GET_ALL: `${API_BASE_URL}/api/v1/bookings`,
+  GET_BY_ID: (id: number) => `${API_BASE_URL}/api/v1/bookings/${id}`,
+  BOOKED: `${API_BASE_URL}/api/v1/bookings/booked`,
+  AVAILABLE: `${API_BASE_URL}/api/v1/bookings/available`,
+  GET_TIMESLOTS: `${API_BASE_URL}/api/v1/bookings/timeslots`,
+  GET_BOOKINGS_BY_DATE: `${API_BASE_URL}/api/v1/bookings/by-date`,
 };
 
 // TimeSlot URLs
 export const TIMESLOT_URLS = {
-  UPDATE_ONE: `${API_BASE_URL}/timeslot/update-one`,
-  BATCH_UPDATE: `${API_BASE_URL}/timeslot/batch-update`,
+  UPDATE_ONE: `${API_BASE_URL}/api/v1/timeslot/update-one`,
+  BATCH_UPDATE: `${API_BASE_URL}/api/v1/timeslot/batch-update`,
   GET_BY_TABLE_DATE: (tableId: number, date: string) =>
-    `${API_BASE_URL}/timeslot/table/${tableId}/date/${date}`,
+    `${API_BASE_URL}/api/v1/timeslot/table/${tableId}/date/${date}`,
 };
 
 // Menu URLs
 export const MENU_URLS = {
-  CREATE_MENU: `${API_BASE_URL}/menu/create`,
-  GET_MENUS: `${API_BASE_URL}/menu/getMenus`,
-  GET_DISHES: `${API_BASE_URL}/menu/getDishes`,
-  CREATE_DISH: `${API_BASE_URL}/menu/dish/create`,
-  UPDATE_MENU: `${API_BASE_URL}/menu/update-menu`,
-  UPDATE_DISH: `${API_BASE_URL}/menu/update-dish`,
+  CREATE_MENU: `${API_BASE_URL}/api/v1/menu/create`,
+  GET_MENUS: `${API_BASE_URL}/api/v1/menu/getMenus`,
+  GET_DISHES: `${API_BASE_URL}/api/v1/menu/getDishes`,
+  CREATE_DISH: `${API_BASE_URL}/api/v1/menu/dish/create`,
+  UPDATE_MENU: `${API_BASE_URL}/api/v1/menu/update-menu`,
+  UPDATE_DISH: `${API_BASE_URL}/api/v1/menu/update-dish`,
 };
 
 // Dish URLs
 export const DISH_URLS = {
-  CREATE: `${API_BASE_URL}/dishes`,
-  GET_ALL: `${API_BASE_URL}/dishes`,
-  GET_BY_ID: (id: number) => `${API_BASE_URL}/dishes/${id}`,
-  UPDATE: (id: number) => `${API_BASE_URL}/dishes/${id}`,
-  DELETE: (id: number) => `${API_BASE_URL}/dishes/${id}`,
-  GET_BY_MENU: (menuId: number) => `${API_BASE_URL}/dishes/menu/${menuId}`,
+  CREATE: `${API_BASE_URL}/api/v1/dishes`,
+  GET_ALL: `${API_BASE_URL}/api/v1/dishes`,
+  GET_BY_ID: (id: number) => `${API_BASE_URL}/api/v1/dishes/${id}`,
+  UPDATE: (id: number) => `${API_BASE_URL}/api/v1/dishes/${id}`,
+  DELETE: (id: number) => `${API_BASE_URL}/api/v1/dishes/${id}`,
+  GET_BY_MENU: (menuId: number) =>
+    `${API_BASE_URL}/api/v1/dishes/menu/${menuId}`,
 };
 
 // Order URLs
 export const ORDER_URLS = {
-  CREATE: `${API_BASE_URL}/orders`,
-  GET_ALL: `${API_BASE_URL}/orders`,
-  GET_BY_ID: (id: number) => `${API_BASE_URL}/orders/${id}`,
-  UPDATE_ITEM_STATUS: `${API_BASE_URL}/orders/items/status`,
-  GET_BY_TABLE: (tableId: number) => `${API_BASE_URL}/orders/table/${tableId}`,
+  CREATE: `${API_BASE_URL}/api/v1/orders/create`,
+  GET_ALL: `${API_BASE_URL}/api/v1/orders`,
+  GET_BY_ID: (id: number) => `${API_BASE_URL}/api/v1/orders/${id}`,
+  UPDATE_ITEM_STATUS: `${API_BASE_URL}/api/v1/orders/update-item-status`,
   GET_BY_BOOKING: (bookingId: number) =>
-    `${API_BASE_URL}/orders/booking/${bookingId}`,
+    `${API_BASE_URL}/api/v1/orders/booking/${bookingId}`,
 };
 
 // Export a combined object with all URLs for easy imports

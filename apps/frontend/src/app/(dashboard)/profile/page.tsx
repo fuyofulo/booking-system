@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { USER_URLS } from "@/lib/api-urls";
 import { useToast } from "@/components/ToastContext";
+import { useRestaurant } from "@/context/RestaurantContext";
 
 interface Restaurant {
   id: number;
@@ -50,6 +52,8 @@ interface UserResponse {
 
 export default function ProfilePage() {
   const { addToast } = useToast();
+  const router = useRouter();
+  const { setSelectedRestaurantId } = useRestaurant();
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -97,6 +101,12 @@ export default function ProfilePage() {
           .includes(searchTerm.toLowerCase()) ||
         restaurant.role.name.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
+
+  // New function to handle navigation to dashboard for a specific restaurant
+  const goToDashboard = (restaurantId: number) => {
+    setSelectedRestaurantId(String(restaurantId));
+    router.push("/dashboard");
+  };
 
   return (
     <div className="p-4 space-y-4 w-full">
@@ -181,10 +191,8 @@ export default function ProfilePage() {
 
         {/* Main content area - now spans 8 columns */}
         <Card className="md:col-span-8 border-2 rounded-3xl bg-white text-black">
-        <CardHeader className="py-0 px-6 pb-0">
-            <CardTitle className="text-lg font-semibold">
-              Quick Stats
-            </CardTitle>
+          <CardHeader className="py-0 px-6 pb-0">
+            <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -235,7 +243,12 @@ export default function ProfilePage() {
 
                     {/* Actions */}
                     <div className="flex gap-3">
-                      <Button className="flex-1 bg-[#4a5842] border-white text-white hover:bg-[#3e4a36] hover:text-white font-medium text-xs py-1 h-8">
+                      <Button
+                        className="flex-1 bg-[#4a5842] border-white text-white hover:bg-[#3e4a36] hover:text-white font-medium text-xs py-1 h-8"
+                        onClick={() =>
+                          goToDashboard(userRestaurant.restaurant.id)
+                        }
+                      >
                         Go to Dashboard
                       </Button>
                     </div>
