@@ -17,6 +17,7 @@ typedRouter.post(
   authMiddleware,
   checkPermission("canManageMenu"),
   async (req: Request, res: Response) => {
+    console.log(`${req.body.restaurantId} hit the endpoint to create a menu`);
     const data = req.body;
     const parsedData = CreateMenuSchema.safeParse(data);
 
