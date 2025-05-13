@@ -1,1 +1,1 @@
-{"root":["./src/index.ts"],"version":"5.8.3"}
+{"root":["./src/auth-provider.ts","./src/claude-client.ts","./src/claude-main.ts","./src/http-fetcher.ts","./src/index.ts"],"version":"5.8.3"}

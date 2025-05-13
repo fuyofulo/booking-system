@@ -10,7 +10,8 @@
     "@modelcontextprotocol/sdk": "^1.11.2",
     "@repo/typescript-config": "*",
     "@repo/db": "*",
-    "@repo/secrets": "*"
+    "@repo/secrets": "*",
+    "node-fetch": "^2.6.7"
   },
   "keywords": [],
   "author": "",

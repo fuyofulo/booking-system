@@ -4,6 +4,7 @@ import {
   CallToolResult,
   GetPromptResult,
 } from "@modelcontextprotocol/sdk/types.js";
+import { registerRestaurantTools } from "./restaurantTools.js";
 
 export function registerTools(server: McpServer): void {
   // Register a simple tool that returns a greeting
@@ -13,12 +14,54 @@ export function registerTools(server: McpServer): void {
     {
       name: z.string().describe("Name to greet"),
     },
-    async ({ name }): Promise<CallToolResult> => {
+    async (
+      { name }: { name: string },
+      context: any
+    ): Promise<CallToolResult> => {
+      // Access authenticated user from context if needed
+      const userId = context.request?.userId || "anonymous";
+      console.log(`User ${userId} called greet tool for ${name}`);
+
       return {
         content: [
           {
             type: "text",
             text: `Hello, ${name}!`,
+          },
+        ],
+      };
+    }
+  );
+
+  // Add a protected tool that shows user info from the JWT token
+  server.tool(
+    "protected-info",
+    "A protected tool that requires authentication and shows user information",
+    {},
+    async (
+      args: Record<string, never>,
+      context: any
+    ): Promise<CallToolResult> => {
+      // Get user info from request
+      const userId = context.request?.userId;
+
+      if (!userId) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Unauthorized: Authentication required",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Protected information:\n\nUser ID: ${userId}\nAuthenticated: Yes\n\nThis information is only visible to authenticated users.`,
           },
         ],
       };
@@ -37,7 +80,14 @@ export function registerTools(server: McpServer): void {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    async ({ name }, { sendNotification }): Promise<CallToolResult> => {
+    async (
+      { name }: { name: string },
+      context: any
+    ): Promise<CallToolResult> => {
+      const { sendNotification } = context;
+      const userId = context.request?.userId || "anonymous";
+      console.log(`User ${userId} called multi-greet tool for ${name}`);
+
       const sleep = (ms: number) =>
         new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -78,7 +128,13 @@ export function registerTools(server: McpServer): void {
     {
       name: z.string().describe("Name to include in greeting"),
     },
-    async ({ name }): Promise<GetPromptResult> => {
+    async (
+      { name }: { name: string },
+      context: any
+    ): Promise<GetPromptResult> => {
+      const userId = context.request?.userId || "anonymous";
+      console.log(`User ${userId} requested greeting template for ${name}`);
+
       return {
         messages: [
           {
@@ -108,9 +164,15 @@ export function registerTools(server: McpServer): void {
         .default(50),
     },
     async (
-      { interval, count },
-      { sendNotification }
+      { interval, count }: { interval: number; count: number },
+      context: any
     ): Promise<CallToolResult> => {
+      const { sendNotification } = context;
+      const userId = context.request?.userId || "anonymous";
+      console.log(
+        `User ${userId} started notification stream: interval=${interval}ms, count=${count}`
+      );
+
       const sleep = (ms: number) =>
         new Promise((resolve) => setTimeout(resolve, ms));
       let counter = 0;
@@ -142,4 +204,7 @@ export function registerTools(server: McpServer): void {
       };
     }
   );
+
+  // Register restaurant-specific tools
+  registerRestaurantTools(server);
 }

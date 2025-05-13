@@ -8,10 +8,12 @@ import {
   GetPromptResult,
   isInitializeRequest,
   ReadResourceResult,
+  JSONRPCRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 import { InMemoryEventStore } from "./inMemoryEventStore.js";
 import { registerTools } from "./tools.js";
 import { registerResources } from "./resources.js";
+import { removeTokenForSession, authMiddleware } from "./auth.js";
 
 // Create an MCP server with implementation details
 const getServer = () => {
@@ -19,8 +21,12 @@ const getServer = () => {
     {
       name: "simple-streamable-http-server",
       version: "1.0.0",
+      exposeTools: true,
+      exposeResources: true,
     },
-    { capabilities: { logging: {} } }
+    {
+      capabilities: { logging: {} },
+    }
   );
 
   // Register all tools and resources from separate files
@@ -35,6 +41,9 @@ app.use(express.json());
 
 // Map to store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+
+// Apply auth middleware only to MCP routes
+app.all("/mcp", authMiddleware as any);
 
 app.post("/mcp", async (req: Request, res: Response) => {
   console.log("Received MCP request:", req.body);
@@ -58,6 +67,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
           console.log(`Session initialized with ID: ${sessionId}`);
           transports[sessionId] = transport;
         },
+        // extraContextProvider property is not supported
       });
 
       // Set up onclose handler to clean up transport when closed
@@ -67,6 +77,8 @@ app.post("/mcp", async (req: Request, res: Response) => {
           console.log(
             `Transport closed for session ${sid}, removing from transports map`
           );
+          // Also clean up any stored tokens
+          removeTokenForSession(sid);
           delete transports[sid];
         }
       };
@@ -140,6 +152,9 @@ app.delete("/mcp", async (req: Request, res: Response) => {
   console.log(`Received session termination request for session ${sessionId}`);
 
   try {
+    // Clean up token when session is terminated
+    removeTokenForSession(sessionId);
+
     const transport = transports[sessionId];
     await transport.handleRequest(req, res);
   } catch (error) {
@@ -164,6 +179,8 @@ process.on("SIGINT", async () => {
   for (const sessionId in transports) {
     try {
       console.log(`Closing transport for session ${sessionId}`);
+      // Clean up tokens
+      removeTokenForSession(sessionId);
       await transports[sessionId]!.close();
       delete transports[sessionId];
     } catch (error) {
