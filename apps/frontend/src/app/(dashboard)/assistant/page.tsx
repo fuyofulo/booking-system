@@ -7,7 +7,6 @@ interface Message {
   content: string;
 }
 
-
 interface ConnectionStatus {
   connected: boolean;
   sessionId?: string;
@@ -239,7 +238,7 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="w-full h-screen mx-auto bg-[#778e6b] shadow-lg p-4 text-white border border-white/10 flex flex-col">
+    <div className="w-full h-[87vh] mx-auto bg-[#778e6b] shadow-lg p-4 text-white border border-white/10 flex flex-col rounded-xl">
       <h1 className="text-2xl font-bold mb-2">AI Restaurant Assistant</h1>
 
       {/* Connection status */}
