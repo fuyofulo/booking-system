@@ -4,9 +4,14 @@ import {
   CallToolResult,
   GetPromptResult,
 } from "@modelcontextprotocol/sdk/types.js";
-import { registerRestaurantTools } from "./restaurantTools.js";
+// import { registerRestaurantTools } from "./restaurantTools.js";
 import { registerUserTools } from "./userTools.js";
 import { registerTableTools } from "./tableTools.js";
+import { registerTimeSlotTools } from "./timeSlotTools.js";
+import { registerBookingTools } from "./bookingTools.js";
+import { registerStaffTools } from "./staffTools.js";
+import { registerMenuTools } from "./menuTools.js";
+import { registerOrderTools } from "./orderTools.js";
 
 export function registerTools(server: McpServer): void {
   // Register a simple tool that returns a greeting
@@ -172,12 +177,23 @@ export function registerTools(server: McpServer): void {
     }
   );
 
-  // Register restaurant-specific tools
-  registerRestaurantTools(server);
-
-  // Register user-specific tools
   registerUserTools(server);
 
-  // Register table-specific tools
+  registerTimeSlotTools(server);
+
+  registerBookingTools(server);
+
   registerTableTools(server);
+
+  registerStaffTools(server);
+
+  registerMenuTools(server);
+
+  registerOrderTools(server);
+
+
+
+
+
+
 }

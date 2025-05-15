@@ -238,46 +238,44 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="w-full h-[87vh] mx-auto bg-[#778e6b] shadow-lg p-4 text-white border border-white/10 flex flex-col rounded-xl">
-      <h1 className="text-2xl font-bold mb-2">AI Restaurant Assistant</h1>
+    <div className="w-full h-[87vh] mx-auto bg-[#778e6b] shadow-lg p-2 text-white border border-white/10 flex flex-col rounded-xl">
+      <h1 className="text-lg font-bold mb-1">AI Restaurant Assistant</h1>
 
       {/* Connection status */}
-      <div className="bg-[#5a6d51] p-2 rounded-lg mb-4 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
+      <div className="bg-[#5a6d51] p-1 rounded-lg mb-2 flex justify-between items-center text-sm">
+        <div className="flex items-center space-x-1">
           <div
-            className={`w-3 h-3 rounded-full ${status.connected ? "bg-green-500" : "bg-red-500"}`}
+            className={`w-2 h-2 rounded-full ${status.connected ? "bg-green-500" : "bg-red-500"}`}
           ></div>
           <span>{status.connected ? "Connected" : "Disconnected"}</span>
           {status.sessionId && (
             <span className="text-xs opacity-70">
-              Session: {status.sessionId.slice(0, 8)}...
+              {status.sessionId.slice(0, 8)}
             </span>
           )}
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-1">
           {!status.connected ? (
             <>
               {savedToken ? (
-                <div className="flex space-x-2">
+                <div className="flex space-x-1">
                   <button
                     onClick={handleConnect}
                     disabled={isConnecting}
-                    className="bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded text-white text-sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded text-white text-xs"
                   >
-                    {isConnecting ? "Connecting..." : "Connect"}
+                    {isConnecting ? "..." : "Connect"}
                   </button>
                 </div>
               ) : (
-                <div className="text-xs italic">
-                  No authentication token available
-                </div>
+                <div className="text-xs italic">No token</div>
               )}
             </>
           ) : (
-            <div className="flex space-x-2">
+            <div className="flex space-x-1">
               <button
                 onClick={handleDisconnect}
-                className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-white text-sm"
+                className="bg-red-600 hover:bg-red-700 px-2 py-0.5 rounded text-white text-xs"
               >
                 Disconnect
               </button>
@@ -287,33 +285,36 @@ export default function AssistantPage() {
       </div>
 
       {/* Messages container */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-lg p-4 mb-4 space-y-3 text-gray-800">
+      <div className="flex-1 overflow-y-auto bg-white rounded-lg p-2 mb-2 space-y-1.5 text-gray-800">
         {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`p-3 rounded-lg max-w-[80%] ${
-              msg.role === "user"
-                ? "bg-[#4a5d41] ml-auto text-white"
-                : msg.role === "assistant"
-                  ? "bg-[#5a6d51] text-white"
-                  : "bg-[#f0f0f0] text-center mx-auto text-sm italic text-gray-600"
-            }`}
-          >
-            {msg.content}
+          <div key={idx} className="flex flex-col">
+            <div
+              className={`p-1.5 rounded-lg text-sm ${
+                msg.role === "user"
+                  ? "bg-[#4a5d41] ml-auto text-white w-fit max-w-[60%]"
+                  : msg.role === "assistant"
+                    ? "bg-[#5a6d51] text-white max-w-[80%]"
+                    : "bg-[#f0f0f0] text-center mx-auto text-xs italic text-gray-600 max-w-[90%]"
+              }`}
+            >
+              {msg.content}
+            </div>
           </div>
         ))}
         {isLoading && (
-          <div className="p-3 rounded-lg bg-[#5a6d51] max-w-[80%] text-white">
-            <div className="flex space-x-2">
-              <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-              <div
-                className="w-2 h-2 bg-white rounded-full animate-bounce"
-                style={{ animationDelay: "0.2s" }}
-              ></div>
-              <div
-                className="w-2 h-2 bg-white rounded-full animate-bounce"
-                style={{ animationDelay: "0.4s" }}
-              ></div>
+          <div className="flex flex-col">
+            <div className="p-1.5 rounded-lg bg-[#5a6d51] w-fit max-w-[60%] text-white">
+              <div className="flex space-x-1">
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
+                <div
+                  className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+                <div
+                  className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
+                  style={{ animationDelay: "0.4s" }}
+                ></div>
+              </div>
             </div>
           </div>
         )}
@@ -321,39 +322,23 @@ export default function AssistantPage() {
       </div>
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="flex space-x-2">
+      <form onSubmit={handleSubmit} className="flex space-x-1">
         <input
           type="text"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Type your message..."
+          placeholder="Type message..."
           disabled={!status.connected || isLoading}
-          className="flex-1 bg-[#5a6d51] px-4 py-2 rounded-lg text-white placeholder-gray-300"
+          className="flex-1 bg-[#5a6d51] px-2 py-1 rounded-lg text-white placeholder-gray-300 text-sm"
         />
         <button
           type="submit"
           disabled={!status.connected || !inputMessage.trim() || isLoading}
-          className="bg-[#4a5d41] hover:bg-[#3a4d31] px-4 py-2 rounded-lg text-white disabled:opacity-50"
+          className="bg-[#4a5d41] hover:bg-[#3a4d31] px-2 py-1 rounded-lg text-white disabled:opacity-50 text-sm"
         >
           Send
         </button>
       </form>
-
-      {/* Capabilities info */}
-      {status.connected && (
-        <div className="mt-2 text-xs flex justify-between opacity-70">
-          <span>Tools: {status.tools}</span>
-          <span>Prompts: {status.prompts}</span>
-          <span>Resources: {status.resources}</span>
-        </div>
-      )}
-
-      {/* Token status display at bottom */}
-      <div className="mt-2 text-xs text-center opacity-70">
-        {savedToken
-          ? `Using stored token: ${savedToken.substring(0, 10)}...`
-          : "No token stored in browser"}
-      </div>
     </div>
   );
 }
