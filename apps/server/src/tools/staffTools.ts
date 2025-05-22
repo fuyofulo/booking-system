@@ -7,6 +7,10 @@ import { BACKEND_API_URL } from "../config.js";
 import { CreateRestaurantUserSchema } from "@repo/schemas/types";
 
 /**
+ * Available Staff Tools:
+ * - create-restaurant-user: Adds a user to a restaurant with a specific role
+ * - get-restaurant-users: Fetches all users for a specific restaurant
+ *
  * Register staff management tools with the MCP server
  */
 export function registerStaffTools(server: McpServer): void {

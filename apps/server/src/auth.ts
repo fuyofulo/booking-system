@@ -2,11 +2,53 @@ import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { JWT_SECRET } from "@repo/secrets/config";
 
-// Store tokens by session ID
-export const tokenStore: { [sessionId: string]: string } = {};
+// Define a session interface for better type safety
+interface SessionData {
+  token: string;
+  userId: string | number;
+}
 
-// Store user IDs by session ID
-export const userIdStore: { [sessionId: string]: string | number } = {};
+// Session store class to manage per-session data
+class SessionStore {
+  private sessions: Map<string, SessionData> = new Map();
+
+  // Store session data
+  setSession(sessionId: string, token: string, userId: string | number): void {
+    this.sessions.set(sessionId, { token, userId });
+  }
+
+  // Get token for a session
+  getToken(sessionId: string): string | undefined {
+    return this.sessions.get(sessionId)?.token;
+  }
+
+  // Get user ID for a session
+  getUserId(sessionId: string): string | number | undefined {
+    return this.sessions.get(sessionId)?.userId;
+  }
+
+  // Remove session data
+  removeSession(sessionId: string): void {
+    this.sessions.delete(sessionId);
+  }
+
+  // Check if a session exists
+  hasSession(sessionId: string): boolean {
+    return this.sessions.has(sessionId);
+  }
+
+  // Get all sessions (for debugging)
+  getAllSessions(): { sessionId: string; userId: string | number }[] {
+    const sessions: { sessionId: string; userId: string | number }[] = [];
+    this.sessions.forEach((data, sessionId) => {
+      sessions.push({ sessionId, userId: data.userId });
+    });
+    return sessions;
+  }
+}
+
+// Create a global session store instance
+const sessionStore = new SessionStore();
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET couldn't be exported from config");
@@ -27,11 +69,7 @@ export function authMiddleware(
 
   // Get the Authorization header and handle both formats: with or without "Bearer " prefix
   let token = req.headers.authorization || "";
-
-  // If the token starts with "Bearer ", remove that prefix
-  if (token.startsWith("Bearer ")) {
-    token = token.substring(7);
-  }
+  token = token.startsWith("Bearer ") ? token.substring(7) : token;
 
   if (!token) {
     return res.status(401).json({
@@ -52,10 +90,8 @@ export function authMiddleware(
       // Store the token with the session ID
       const sessionId = req.headers["mcp-session-id"] as string | undefined;
       if (sessionId) {
-        tokenStore[sessionId] = token;
-
-        // Store the user ID with the session ID
-        userIdStore[sessionId] = userId;
+        // Store in the session store
+        sessionStore.setSession(sessionId, token, userId);
 
         // Log the user ID
         console.log(
@@ -84,7 +120,7 @@ export function authMiddleware(
  * Get token for a session ID
  */
 export function getTokenForSession(sessionId: string): string | undefined {
-  return tokenStore[sessionId];
+  return sessionStore.getToken(sessionId);
 }
 
 /**
@@ -93,21 +129,25 @@ export function getTokenForSession(sessionId: string): string | undefined {
 export function getUserIdForSession(
   sessionId: string
 ): string | number | undefined {
-  return userIdStore[sessionId];
+  return sessionStore.getUserId(sessionId);
 }
 
 /**
  * Remove token when a session is terminated
  */
 export function removeTokenForSession(sessionId: string): void {
-  if (tokenStore[sessionId]) {
-    delete tokenStore[sessionId];
-    console.log(`Token removed for session ${sessionId}`);
+  if (sessionStore.hasSession(sessionId)) {
+    sessionStore.removeSession(sessionId);
+    console.log(`Session data removed for session ${sessionId}`);
   }
+}
 
-  // Also remove the user ID when session is terminated
-  if (userIdStore[sessionId]) {
-    delete userIdStore[sessionId];
-    console.log(`User ID removed for session ${sessionId}`);
-  }
+/**
+ * Debug function to list all active sessions
+ */
+export function getAllSessions(): {
+  sessionId: string;
+  userId: string | number;
+}[] {
+  return sessionStore.getAllSessions();
 }

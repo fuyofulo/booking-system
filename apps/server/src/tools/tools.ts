@@ -13,115 +13,53 @@ import { registerStaffTools } from "./staffTools.js";
 import { registerMenuTools } from "./menuTools.js";
 import { registerOrderTools } from "./orderTools.js";
 
+/**
+ * This file registers all tools from individual tool files:
+ *
+ * 1. User Tools:
+ *    - get-user-profile: Fetches the current user's profile
+ *
+ * 2. Table Tools:
+ *    - create-table, get-restaurant-tables, get-table-details,
+ *    - update-table, delete-table
+ *
+ * 3. Time Slot Tools:
+ *    - update-time-slot, batch-update-time-slots, get-table-time-slots
+ *
+ * 4. Booking Tools:
+ *    - create-booking, get-available-slots, get-timeslots,
+ *    - get-all-bookings, get-bookings-by-date
+ *
+ * 5. Staff Tools:
+ *    - create-restaurant-user, get-restaurant-users
+ *
+ * 6. Menu Tools:
+ *    - create-menu, update-menu, create-dish, update-dish,
+ *    - get-restaurant-menus, get-menu-dishes
+ *
+ * 7. Order Tools:
+ *    - get-all-orders, get-order-by-id, get-orders-by-booking,
+ *    - create-order, get-booking-total, update-order-item-status
+ *
+ * Testing Tools:
+ * - start-notification-stream: Used for testing notification resumability
+ */
 export function registerTools(server: McpServer): void {
-  // Register a simple tool that returns a greeting
-  server.tool(
-    "greet",
-    "A simple greeting tool",
-    {
-      name: z.string().describe("Name to greet"),
-    },
-    async (
-      { name }: { name: string },
-      context: any
-    ): Promise<CallToolResult> => {
-      // Access authenticated user from context if needed
-      const userId = context.request?.userId || "anonymous";
-      console.log(`User ${userId} called greet tool for ${name}`);
+  registerUserTools(server);
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Hello, ${name}!`,
-          },
-        ],
-      };
-    }
-  );
+  registerTimeSlotTools(server);
 
-  // Register a tool that sends multiple greetings with notifications (with annotations)
-  server.tool(
-    "multi-greet",
-    "A tool that sends different greetings with delays between them",
-    {
-      name: z.string().describe("Name to greet"),
-    },
-    {
-      title: "Multiple Greeting Tool",
-      readOnlyHint: true,
-      openWorldHint: false,
-    },
-    async (
-      { name }: { name: string },
-      context: any
-    ): Promise<CallToolResult> => {
-      const { sendNotification } = context;
-      const userId = context.request?.userId || "anonymous";
-      console.log(`User ${userId} called multi-greet tool for ${name}`);
+  registerBookingTools(server);
 
-      const sleep = (ms: number) =>
-        new Promise((resolve) => setTimeout(resolve, ms));
+  registerTableTools(server);
 
-      await sendNotification({
-        method: "notifications/message",
-        params: { level: "debug", data: `Starting multi-greet for ${name}` },
-      });
+  registerStaffTools(server);
 
-      await sleep(1000); // Wait 1 second before first greeting
+  registerMenuTools(server);
 
-      await sendNotification({
-        method: "notifications/message",
-        params: { level: "info", data: `Sending first greeting to ${name}` },
-      });
+  registerOrderTools(server);
 
-      await sleep(1000); // Wait another second before second greeting
-
-      await sendNotification({
-        method: "notifications/message",
-        params: { level: "info", data: `Sending second greeting to ${name}` },
-      });
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Good morning, ${name}!`,
-          },
-        ],
-      };
-    }
-  );
-
-  // Register a simple prompt
-  server.prompt(
-    "greeting-template",
-    "A simple greeting prompt template",
-    {
-      name: z.string().describe("Name to include in greeting"),
-    },
-    async (
-      { name }: { name: string },
-      context: any
-    ): Promise<GetPromptResult> => {
-      const userId = context.request?.userId || "anonymous";
-      console.log(`User ${userId} requested greeting template for ${name}`);
-
-      return {
-        messages: [
-          {
-            role: "user",
-            content: {
-              type: "text",
-              text: `Please greet ${name} in a friendly manner.`,
-            },
-          },
-        ],
-      };
-    }
-  );
-
-  // Register a tool specifically for testing resumability
+  // Testing tools for notification system
   server.tool(
     "start-notification-stream",
     "Starts sending periodic notifications for testing resumability",
@@ -176,24 +114,4 @@ export function registerTools(server: McpServer): void {
       };
     }
   );
-
-  registerUserTools(server);
-
-  registerTimeSlotTools(server);
-
-  registerBookingTools(server);
-
-  registerTableTools(server);
-
-  registerStaffTools(server);
-
-  registerMenuTools(server);
-
-  registerOrderTools(server);
-
-
-
-
-
-
 }

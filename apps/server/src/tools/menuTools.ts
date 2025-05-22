@@ -12,6 +12,14 @@ import {
 } from "@repo/schemas/types";
 
 /**
+ * Available Menu Tools:
+ * - create-menu: Creates a new menu for a restaurant
+ * - update-menu: Updates an existing menu
+ * - create-dish: Creates a new dish in a menu
+ * - update-dish: Updates an existing dish
+ * - get-restaurant-menus: Fetches all menus for a restaurant
+ * - get-menu-dishes: Fetches all dishes for a specific menu
+ *
  * Register menu management tools with the MCP server
  */
 export function registerMenuTools(server: McpServer): void {

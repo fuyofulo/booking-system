@@ -10,6 +10,14 @@ import {
 } from "@repo/schemas/types";
 
 /**
+ * Available Order Tools:
+ * - get-all-orders: Fetches all orders for a restaurant
+ * - get-order-by-id: Fetches details of a specific order
+ * - get-orders-by-booking: Fetches orders for a specific booking
+ * - create-order: Creates a new order for a booking
+ * - get-booking-total: Calculates total for all orders in a booking
+ * - update-order-item-status: Updates status of order items
+ *
  * Register order management tools with the MCP server
  *
  * These tools allow for managing restaurant orders including:

@@ -201,8 +201,17 @@ export default function SidebarWithProfile({
         // Set restaurants in the context
         setUserRestaurants(data.user.restaurants);
 
-        // Set first restaurant as default if available and none is selected
-        if (data.user.restaurants.length > 0 && !selectedRestaurantId) {
+        // Try to load selected restaurant from localStorage
+        const storedRestaurantId = localStorage.getItem("selectedRestaurantId");
+        if (
+          storedRestaurantId &&
+          data.user.restaurants.some(
+            (r: UserRestaurant) =>
+              String(r.restaurant.id) === storedRestaurantId
+          )
+        ) {
+          setSelectedRestaurantId(storedRestaurantId);
+        } else if (data.user.restaurants.length > 0 && !selectedRestaurantId) {
           setSelectedRestaurantId(
             String(data.user.restaurants[0].restaurant.id)
           );
@@ -222,6 +231,29 @@ export default function SidebarWithProfile({
     setSelectedRestaurantId,
     selectedRestaurantId,
   ]);
+
+  // Store selectedRestaurantId and name in localStorage whenever it changes
+  useEffect(() => {
+    if (selectedRestaurantId) {
+      localStorage.setItem("selectedRestaurantId", selectedRestaurantId);
+
+      // Find restaurant name from the selected restaurant ID
+      const selectedRestaurantObj = userRestaurants.find(
+        (r) => String(r.restaurant.id) === selectedRestaurantId
+      );
+
+      if (selectedRestaurantObj) {
+        const restaurantName = selectedRestaurantObj.restaurant.name;
+        localStorage.setItem(
+          `restaurant_name_${selectedRestaurantId}`,
+          restaurantName
+        );
+        console.log(
+          `Stored restaurant name in localStorage: ${restaurantName} for ID: ${selectedRestaurantId}`
+        );
+      }
+    }
+  }, [selectedRestaurantId, userRestaurants]);
 
   // Get user initials for avatar fallback
   const getUserInitials = () => {
@@ -289,7 +321,25 @@ export default function SidebarWithProfile({
                     </div>
                     <Select
                       value={selectedRestaurantId || ""}
-                      onValueChange={setSelectedRestaurantId}
+                      onValueChange={(value) => {
+                        setSelectedRestaurantId(value);
+                        // Find and store the restaurant name when selection changes
+                        const selectedRestaurantObj = userRestaurants.find(
+                          (r) => String(r.restaurant.id) === value
+                        );
+
+                        if (selectedRestaurantObj) {
+                          const restaurantName =
+                            selectedRestaurantObj.restaurant.name;
+                          localStorage.setItem(
+                            `restaurant_name_${value}`,
+                            restaurantName
+                          );
+                          console.log(
+                            `Stored restaurant name in localStorage: ${restaurantName} for ID: ${value}`
+                          );
+                        }
+                      }}
                     >
                       <SelectTrigger className="w-full bg-white text-black border-0">
                         <div className="flex items-center h-9">

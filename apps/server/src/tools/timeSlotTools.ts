@@ -10,6 +10,11 @@ import {
 } from "@repo/schemas/types";
 
 /**
+ * Available Time Slot Tools:
+ * - update-time-slot: Updates a single time slot's availability
+ * - batch-update-time-slots: Updates multiple time slots at once
+ * - get-table-time-slots: Fetches time slots for a specific table on a specific date
+ *
  * Register time slot management tools with the MCP server
  *
  * A time slot represents a 30-minute period. Slots are numbered 0-47 for a full day:

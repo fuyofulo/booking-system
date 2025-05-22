@@ -16,8 +16,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.listen(7000, () => {
-  console.log("Server running on port 7000");
+app.listen(9000, () => {
+  console.log("Server running on port 9000");
 });
 
 app.get("/", (req, res) => {

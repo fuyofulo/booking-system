@@ -1,5 +1,5 @@
 // Base API URL - can be configured based on environment
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000";
 
 // User URLs
 export const USER_URLS = {

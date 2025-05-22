@@ -140,4 +140,77 @@ typedRouter.get("/me", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+// New endpoint to fetch user details for a specific restaurant
+typedRouter.get(
+  "/me/restaurant/:restaurantId",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      // @ts-ignore
+      const userId = req.userId;
+      const restaurantIdParam = req.params.restaurantId;
+
+      if (!restaurantIdParam) {
+        return res.status(400).json({
+          message: "Restaurant ID is required",
+        });
+      }
+
+      const restaurantId = parseInt(restaurantIdParam);
+
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({
+          message: "Invalid restaurant ID",
+        });
+      }
+
+      const user = await prismaClient.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          restaurantUsers: {
+            where: {
+              restaurantId: restaurantId,
+            },
+            include: {
+              restaurant: true,
+              role: true,
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          message: "User not found",
+        });
+      }
+
+      // Check if the user has access to this restaurant
+      if (!user.restaurantUsers || user.restaurantUsers.length === 0) {
+        return res.status(403).json({
+          message: "User does not have access to this restaurant",
+        });
+      }
+
+      return res.status(200).json({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          hasRestaurant: true,
+          restaurants: user.restaurantUsers,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching user details for restaurant:", error);
+      return res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+);
+
 export const userRouter = typedRouter;

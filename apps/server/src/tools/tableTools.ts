@@ -7,6 +7,13 @@ import { BACKEND_API_URL } from "../config.js";
 import { CreateTableSchema } from "@repo/schemas/types";
 
 /**
+ * Available Table Tools:
+ * - create-table: Creates a new table in a restaurant
+ * - get-restaurant-tables: Fetches all tables for a restaurant
+ * - get-table-details: Fetches details for a specific table
+ * - update-table: Updates an existing table's details
+ * - delete-table: Deletes a table from a restaurant
+ *
  * Register table-related tools with the MCP server
  */
 export function registerTableTools(server: McpServer): void {

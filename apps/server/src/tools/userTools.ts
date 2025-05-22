@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { getTokenForSession, getUserIdForSession } from "../auth.js";
@@ -6,6 +5,9 @@ import { get } from "../req-helper.js";
 import { BACKEND_API_URL } from "../config.js";
 
 /**
+ * Available User Tools:
+ * - get-user-profile: Fetches the current user's profile information
+ *
  * Register user-related tools with the MCP server
  */
 export function registerUserTools(server: McpServer): void {
@@ -48,6 +50,9 @@ export function registerUserTools(server: McpServer): void {
         // Get user ID for logging
         const userId = getUserIdForSession(sessionId);
 
+        // Check for restaurant ID in the transport
+        const restaurantId = (context.transport as any)?.restaurantId;
+
         // Use the sendNotification function to send progress updates to the client
         const { sendNotification } = context;
 
@@ -56,14 +61,24 @@ export function registerUserTools(server: McpServer): void {
             method: "notifications/message",
             params: {
               level: "info",
-              data: "Fetching your user profile data...",
+              data: restaurantId
+                ? `Fetching your user profile data for restaurant ID: ${restaurantId}...`
+                : "Fetching your user profile data...",
             },
           });
         }
 
         // Make the API request to fetch user data
-        console.log(`Fetching user profile for User ID: ${userId}`);
-        const userUrl = `${BACKEND_API_URL}/user/me`;
+        console.log(
+          restaurantId
+            ? `Fetching user profile for User ID: ${userId} and Restaurant ID: ${restaurantId}`
+            : `Fetching user profile for User ID: ${userId}`
+        );
+
+        // Choose the endpoint based on whether we have a restaurantId
+        const userUrl = restaurantId
+          ? `${BACKEND_API_URL}/user/me/restaurant/${restaurantId}`
+          : `${BACKEND_API_URL}/user/me`;
 
         const userData = await get(userUrl, token);
 
@@ -92,14 +107,15 @@ export function registerUserTools(server: McpServer): void {
                   const role = entry.role;
 
                   return `Restaurant: ${restaurant.name}
-ID: ${restaurant.id}
-Role: ${role.name}
-Permissions: ${Object.entries(role)
-                    .filter(
-                      ([key, value]) => key.startsWith("can") && value === true
-                    )
-                    .map(([key]) => key.replace("can", ""))
-                    .join(", ")}`;
+                    ID: ${restaurant.id}
+                    Role: ${role.name}
+                    Permissions: ${Object.entries(role)
+                      .filter(
+                        ([key, value]) =>
+                          key.startsWith("can") && value === true
+                      )
+                      .map(([key]) => key.replace("can", ""))
+                      .join(", ")}`;
                 })
                 .join("\n\n")
             : "No restaurants found";

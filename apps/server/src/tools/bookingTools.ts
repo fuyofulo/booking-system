@@ -7,6 +7,13 @@ import { BACKEND_API_URL } from "../config.js";
 import { CreateBookingSchema } from "@repo/schemas/types";
 
 /**
+ * Available Booking Tools:
+ * - create-booking: Creates a new table booking : works
+ * - get-available-slots: Fetches available booking slots for a restaurant : works 
+ * - get-timeslots: Fetches detailed time slots with booking information : 
+ * - get-all-bookings: Fetches all bookings for a restaurant : works
+ * - get-bookings-by-date: Fetches all bookings for a specific date
+ *
  * Register booking-related tools with the MCP server
  *
  * In this system, time slots represent 30-minute periods throughout the day (0-47):
