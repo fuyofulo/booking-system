@@ -26,13 +26,6 @@ const slotIndexToTime = (slotIndex: number) => {
   return `${displayHour}:${minute}${amPm}`;
 };
 
-const COMMON_HOURS = [
-  { name: "Breakfast (8:00am - 10:00am)", slots: [16, 17, 18, 19] },
-  { name: "Lunch (12:00pm - 2:00pm)", slots: [24, 25, 26, 27] },
-  { name: "Dinner (6:00pm - 9:00pm)", slots: [36, 37, 38, 39, 40, 41] },
-  { name: "Late Dinner (8:00pm - 10:30pm)", slots: [40, 41, 42, 43, 44, 45] },
-];
-
 // Days of week for multi-day selection
 const DAYS_OF_WEEK = [
   { value: 0, label: "Sunday" },
@@ -336,11 +329,9 @@ export default function SchedulePage() {
         "success"
       );
 
-      // Switch to view tab
+      // Update view and refresh data together to avoid double refresh
+      await fetchWeeklySchedule();
       setTabValue("view");
-
-      // Refresh the weekly schedule immediately
-      fetchWeeklySchedule();
 
       // Additional message to inform user
       setTimeout(() => {
@@ -370,11 +361,6 @@ export default function SchedulePage() {
       fetchWeeklySchedule();
     }
   }, [tables]);
-
-  // Handle common hour selection
-  const handleCommonHourSelect = (slots: number[]) => {
-    setSelectedTimeSlots(slots);
-  };
 
   // Handle individual time slot selection
   const handleTimeSlotToggle = (slotIndex: number) => {
@@ -596,8 +582,8 @@ export default function SchedulePage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
-                          <div className="border rounded-md overflow-hidden">
+                        <div className="space-y-4 flex flex-col">
+                          <div className="border rounded-md overflow-hidden w-fit">
                             <Calendar
                               mode="multiple"
                               selected={selectedDatesForEdit}
@@ -679,35 +665,9 @@ export default function SchedulePage() {
                             </span>
                           </div>
                         </div>
-
-                        <div className="mb-4 space-y-2">
-                          <Label>Common Hours:</Label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {COMMON_HOURS.map((hour) => (
-                              <Button
-                                key={hour.name}
-                                variant="outline"
-                                className={
-                                  hour.slots.every((slot) =>
-                                    selectedTimeSlots.includes(slot)
-                                  )
-                                    ? "border-[#4a5842] bg-[#4a5842]/10"
-                                    : ""
-                                }
-                                onClick={() =>
-                                  handleCommonHourSelect(hour.slots)
-                                }
-                              >
-                                {hour.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-
                         <Separator className="my-4" />
 
                         <div className="space-y-4">
-                          <Label>Individual Time Slots:</Label>
                           <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                             {Array.from({ length: 48 }).map((_, index) => (
                               <div
