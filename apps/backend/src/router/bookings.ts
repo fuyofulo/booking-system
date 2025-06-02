@@ -76,9 +76,31 @@ typedRouter.post(
           tableId,
           date: slotDate,
           slotIndex: { in: slotIndices },
+          isOpen: true,
         },
-        data: { isOpen: false },
+        data: {
+          isOpen: true,
+        },
       });
+
+      for (const slotIndex of slotIndices) {
+        await prismaClient.tableTimeSlot.update({
+          where: {
+            tableId_date_slotIndex: {
+              tableId,
+              date: slotDate,
+              slotIndex,
+            },
+          },
+          data: {
+            booking: {
+              connect: {
+                id: booking.id,
+              },
+            },
+          },
+        });
+      }
 
       return res.json({
         message: "Booking successful",
@@ -189,10 +211,13 @@ typedRouter.get(
             tableId: { in: tableIds },
             date,
           },
-          select: {
-            tableId: true,
-            slotIndex: true,
-            isOpen: true,
+          include: {
+            booking: {
+              select: {
+                customerName: true,
+                customerPhone: true,
+              },
+            },
           },
           orderBy: {
             slotIndex: "asc",
@@ -235,9 +260,6 @@ typedRouter.get(
       > = {};
 
       for (const slot of allSlots) {
-        const key = `${slot.tableId}-${slot.slotIndex}`;
-        const bookingInfo = bookingMap.get(key);
-
         if (!slotMap[slot.tableId]) {
           slotMap[slot.tableId] = [];
         }
@@ -245,8 +267,13 @@ typedRouter.get(
         slotMap[slot.tableId]!.push({
           slotIndex: slot.slotIndex,
           isOpen: slot.isOpen,
-          ...(slot.isOpen === false && bookingInfo
-            ? { booking: bookingInfo }
+          ...(slot.booking
+            ? {
+                booking: {
+                  customerName: slot.booking.customerName,
+                  customerPhone: slot.booking.customerPhone ?? undefined,
+                },
+              }
             : {}),
         });
       }

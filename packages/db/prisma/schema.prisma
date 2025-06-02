@@ -72,7 +72,10 @@ model TableTimeSlot {
   tableId   Int
   date      DateTime // Normalized to midnight (YYYY-MM-DDT00:00:00Z)
   slotIndex Int // 0–47 for 30-minute intervals in a day
-  isOpen    Boolean // Whether this table is available in this slot
+  isOpen    Boolean // Whether this table is administratively open for booking
+
+  bookingId Int? // Optional: links to the Booking if this slot is booked
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
   table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
@@ -80,14 +83,15 @@ model TableTimeSlot {
 }
 
 model Booking {
-  id            Int      @id @default(autoincrement())
-  customerName  String
-  customerPhone String?
-  tableId       Int
-  date          DateTime // Date of the booking (normalized to midnight)
-  slotIndices   Int[] // Array of slot indices
-  createdAt     DateTime @default(now())
-  orders        Order[] // Relation to orders made during this booking
+  id             Int             @id @default(autoincrement())
+  customerName   String
+  customerPhone  String?
+  tableId        Int
+  date           DateTime // Date of the booking (normalized to midnight)
+  slotIndices    Int[] // Array of slot indices
+  createdAt      DateTime        @default(now())
+  orders         Order[] // Relation to orders made during this booking
+  tableTimeSlots TableTimeSlot[] // The specific time slots this booking covers
 
   table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
 

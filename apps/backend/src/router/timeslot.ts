@@ -45,6 +45,7 @@ typedRouter.post(
         },
         update: {
           isOpen,
+          ...(isOpen === false ? { bookingId: null } : {}),
         },
         create: {
           tableId,
@@ -117,6 +118,7 @@ typedRouter.post(
                 },
                 update: {
                   isOpen,
+                  ...(isOpen === false ? { bookingId: null } : {}),
                 },
                 create: {
                   tableId,
@@ -217,6 +219,14 @@ typedRouter.get(
         where: {
           tableId,
           date: dateISO,
+        },
+        include: {
+          booking: {
+            select: {
+              customerName: true,
+              customerPhone: true,
+            },
+          },
         },
         orderBy: {
           slotIndex: "asc",

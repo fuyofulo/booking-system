@@ -11,12 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import {
-  format,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval
-} from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { Clock, Loader2, Save, Info } from "lucide-react";
 
 // Time slot utilities
@@ -86,11 +81,7 @@ export default function SchedulePage() {
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
 
   // For batch updates
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date | null>(null);
-  const [selectedDateMode, setSelectedDateMode] = useState<"single" | "range">(
-    "single"
-  );
+  const [selectedDatesForEdit, setSelectedDatesForEdit] = useState<Date[]>([]);
 
   // Fetch all tables for the restaurant
   const fetchTables = async () => {
@@ -290,6 +281,12 @@ export default function SchedulePage() {
       return;
     }
 
+    // Check if any dates are selected for edit
+    if (selectedDatesForEdit.length === 0) {
+      addToast("Please select one or more dates to update", "error");
+      return;
+    }
+
     setIsUpdating(true);
     try {
       const token = localStorage.getItem("token");
@@ -298,24 +295,13 @@ export default function SchedulePage() {
         return;
       }
 
-      // Prepare dates array
-      let selectedDates: string[] = [];
+      // Prepare dates array from selectedDatesForEdit
+      const datesToUpdate: string[] = selectedDatesForEdit.map((date) =>
+        format(date, "yyyy-MM-dd")
+      );
 
-      if (selectedDateMode === "single") {
-        // Single date mode
-        selectedDates = [format(startDate, "yyyy-MM-dd")];
-      } else if (selectedDateMode === "range" && endDate) {
-        // Date range mode - include all dates in the range
-        const dateRange = eachDayOfInterval({
-          start: startDate,
-          end: endDate,
-        });
-
-        // Include all dates in the range
-        selectedDates = dateRange.map((date) => format(date, "yyyy-MM-dd"));
-      }
-
-      if (selectedDates.length === 0) {
+      if (datesToUpdate.length === 0) {
+        // Should be caught by the check above, but good to have
         addToast("No dates selected", "error");
         setIsUpdating(false);
         return;
@@ -333,7 +319,7 @@ export default function SchedulePage() {
         },
         body: JSON.stringify({
           tableIds,
-          dates: selectedDates,
+          dates: datesToUpdate,
           slotIndices: selectedTimeSlots,
           isOpen,
           restaurantId: selectedRestaurant.restaurant.id,
@@ -456,9 +442,9 @@ export default function SchedulePage() {
         </TabsList>
 
         {/* View hours tab */}
-        <TabsContent value="view" className="mt-4">
+        <TabsContent value="view">
           <Card className="rounded-3xl bg-[#4a5842] text-white">
-            <CardContent className="p-6">
+            <CardContent>
               <div className="bg-white p-4 rounded-xl text-black">
                 <h3 className="font-medium mb-4 flex items-center text-xl">
                   <Clock className="h-5 w-5 mr-2" />
@@ -470,14 +456,17 @@ export default function SchedulePage() {
                     <Loader2 className="h-8 w-8 animate-spin text-[#4a5842]" />
                   </div>
                 ) : (
-                  <div className="space-y-6 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-4">
                     {DAYS_OF_WEEK.map((day) => (
-                      <div key={day.value} className="border rounded-md p-4">
-                        <h4 className="font-medium text-lg mb-3 flex items-center justify-between">
+                      <div
+                        key={day.value}
+                        className="border rounded-lg p-4 shadow-sm bg-white text-gray-800 flex flex-col h-full"
+                      >
+                        <h4 className="font-semibold text-xl mb-3 flex items-center justify-between">
                           <div>
                             {day.label}{" "}
                             {currentWeekDates[day.value] && (
-                              <span className="text-sm font-normal text-gray-500">
+                              <span className="text-base font-normal text-gray-600 ml-1">
                                 (
                                 {format(
                                   currentWeekDates[day.value],
@@ -486,66 +475,31 @@ export default function SchedulePage() {
                                 )
                               </span>
                             )}
+                          </div>
+                          <div className="flex items-center space-x-3">
                             {weeklySchedule[day.label] &&
                               weeklySchedule[day.label].openSlots.length >
                                 0 && (
-                                <span className="text-sm font-normal text-green-600 ml-2">
-                                  ({weeklySchedule[day.label].openSlots.length}{" "}
-                                  open slots)
+                                <span className="text-sm font-medium text-green-600 flex items-center">
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  {
+                                    weeklySchedule[day.label].openSlots.length
+                                  }{" "}
+                                  Open
                                 </span>
                               )}
                             {weeklySchedule[day.label] &&
                               weeklySchedule[day.label].bookedSlots.length >
                                 0 && (
-                                <span className="text-sm font-normal text-blue-600 ml-2">
-                                  (
-                                  {weeklySchedule[day.label].bookedSlots.length}{" "}
-                                  booked slots)
+                                <span className="text-sm font-medium text-blue-600 flex items-center">
+                                  <Info className="h-4 w-4 mr-1" />
+                                  {
+                                    weeklySchedule[day.label].bookedSlots.length
+                                  }{" "}
+                                  Booked
                                 </span>
                               )}
                           </div>
-
-                          {/* Debug button, only visible in development */}
-                          {process.env.NODE_ENV === "development" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                console.log(
-                                  `Debug: ${day.label} slots:`,
-                                  weeklySchedule[day.label].openSlots
-                                );
-                                console.log(
-                                  `Debug: ${day.label} booked:`,
-                                  weeklySchedule[day.label].bookedSlots
-                                );
-
-                                // If date exists, try a debug fetch
-                                if (currentWeekDates[day.value]) {
-                                  const formattedDate = format(
-                                    currentWeekDates[day.value],
-                                    "yyyy-MM-dd"
-                                  );
-                                  console.log(
-                                    `Attempting debug fetch for ${formattedDate}`
-                                  );
-
-                                  // Print URL being fetched
-                                  const url = `${BOOKING_URLS.GET_TIMESLOTS}?restaurantId=${selectedRestaurant.restaurant.id}&date=${formattedDate}`;
-                                  console.log("Debug URL:", url);
-
-                                  // Show a toast for the user
-                                  addToast(
-                                    `Debug info logged for ${day.label}`,
-                                    "info"
-                                  );
-                                }
-                              }}
-                              className="text-xs"
-                            >
-                              Debug
-                            </Button>
-                          )}
                         </h4>
 
                         {/* No slots at all */}
@@ -553,26 +507,29 @@ export default function SchedulePage() {
                           (weeklySchedule[day.label].openSlots.length === 0 &&
                             weeklySchedule[day.label].bookedSlots.length ===
                               0)) && (
-                          <p className="text-gray-500 italic">
-                            Closed or no available slots
-                          </p>
+                          <div className="text-center py-4">
+                            <Clock className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                            <p className="text-gray-500 italic text-sm">
+                              Closed or no slots available for this day.
+                            </p>
+                          </div>
                         )}
 
                         {/* Available slots section */}
                         {weeklySchedule[day.label] &&
                           weeklySchedule[day.label].openSlots.length > 0 && (
                             <div className="mb-4">
-                              <p className="text-sm font-medium text-green-700 mb-2">
+                              <p className="text-sm font-semibold text-green-700 mb-2 border-b pb-1">
                                 Available Slots:
                               </p>
-                              <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
+                              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                                 {weeklySchedule[day.label].openSlots
                                   .sort((a, b) => a - b)
                                   .map((slotIndex) => (
                                     <div
                                       key={`open-${slotIndex}`}
-                                      className="text-xs px-1 py-1.5 rounded text-center bg-green-100 text-green-800"
-                                      title="Open"
+                                      className="text-xs px-2 py-1.5 rounded-md text-center bg-green-100 text-green-800 font-medium shadow-sm hover:bg-green-200 transition-colors duration-150"
+                                      title="Open Slot"
                                     >
                                       {slotIndexToTime(slotIndex)}
                                     </div>
@@ -585,16 +542,16 @@ export default function SchedulePage() {
                         {weeklySchedule[day.label] &&
                           weeklySchedule[day.label].bookedSlots.length > 0 && (
                             <div>
-                              <p className="text-sm font-medium text-blue-700 mb-2">
+                              <p className="text-sm font-semibold text-blue-700 mb-2 border-b pb-1">
                                 Booked Slots:
                               </p>
-                              <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
+                              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                                 {weeklySchedule[day.label].bookedSlots
                                   .sort((a, b) => a.slotIndex - b.slotIndex)
                                   .map((booking, idx) => (
                                     <div
                                       key={`booked-${booking.slotIndex}-${idx}`}
-                                      className="text-xs px-1 py-1.5 rounded text-center bg-blue-100 text-blue-800"
+                                      className="text-xs px-2 py-1.5 rounded-md text-center bg-blue-100 text-blue-800 font-medium shadow-sm hover:bg-blue-200 transition-colors duration-150 cursor-help"
                                       title={`Table: ${booking.tableName} | Customer: ${booking.customerName}`}
                                     >
                                       {slotIndexToTime(booking.slotIndex)}
@@ -614,9 +571,9 @@ export default function SchedulePage() {
 
         {/* Edit hours tab */}
         {canManageSlots && (
-          <TabsContent value="edit" className="mt-4">
+          <TabsContent value="edit">
             <Card className="rounded-3xl bg-[#4a5842] text-white">
-              <CardContent className="p-6">
+              <CardContent>
                 <div className="bg-white p-4 rounded-xl mb-4 text-black">
                   <div className="flex items-center">
                     <Info className="h-5 w-5 mr-2 text-blue-600" />
@@ -635,72 +592,20 @@ export default function SchedulePage() {
                     <Card className="bg-white text-black rounded-xl">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base">
-                          Date Selection
+                          Select Dates to Modify
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant={
-                                selectedDateMode === "single"
-                                  ? "default"
-                                  : "outline"
-                              }
-                              size="sm"
-                              onClick={() => setSelectedDateMode("single")}
-                              className={
-                                selectedDateMode === "single"
-                                  ? "bg-[#4a5842]"
-                                  : ""
-                              }
-                            >
-                              Single Date
-                            </Button>
-                            <Button
-                              variant={
-                                selectedDateMode === "range"
-                                  ? "default"
-                                  : "outline"
-                              }
-                              size="sm"
-                              onClick={() => setSelectedDateMode("range")}
-                              className={
-                                selectedDateMode === "range"
-                                  ? "bg-[#4a5842]"
-                                  : ""
-                              }
-                            >
-                              Date Range
-                            </Button>
-                          </div>
-
                           <div className="border rounded-md overflow-hidden">
-                            {selectedDateMode === "single" ? (
-                              <Calendar
-                                mode="single"
-                                selected={startDate}
-                                onSelect={(value: Date | undefined) => {
-                                  if (value) setStartDate(value);
-                                }}
-                                className="mx-auto"
-                              />
-                            ) : (
-                              <Calendar
-                                mode="range"
-                                selected={{
-                                  from: startDate,
-                                  to: endDate || undefined,
-                                }}
-                                onSelect={(range) => {
-                                  if (range?.from) {
-                                    setStartDate(range.from);
-                                    setEndDate(range.to || null);
-                                  }
-                                }}
-                                className="mx-auto"
-                              />
-                            )}
+                            <Calendar
+                              mode="multiple"
+                              selected={selectedDatesForEdit}
+                              onSelect={(dates) => {
+                                setSelectedDatesForEdit(dates || []);
+                              }}
+                              className="mx-auto"
+                            />
                           </div>
 
                           {/* Date selection summary */}
@@ -708,33 +613,30 @@ export default function SchedulePage() {
                             <p className="font-medium mb-1">
                               Selected dates for changes:
                             </p>
-                            {selectedDateMode === "single" ? (
-                              <p>{format(startDate, "MMMM d, yyyy")}</p>
+                            {selectedDatesForEdit.length > 0 ? (
+                              <ul className="list-disc list-inside max-h-32 overflow-y-auto">
+                                {selectedDatesForEdit
+                                  .sort((a, b) => a.getTime() - b.getTime())
+                                  .map((date, index) => (
+                                    <li key={index}>
+                                      {format(date, "MMMM d, yyyy")}
+                                    </li>
+                                  ))}
+                              </ul>
                             ) : (
-                              <div>
-                                {endDate ? (
-                                  <>
-                                    <p>
-                                      From: {format(startDate, "MMMM d, yyyy")}
-                                    </p>
-                                    <p>To: {format(endDate, "MMMM d, yyyy")}</p>
-                                    <p className="mt-1 text-xs">
-                                      {
-                                        eachDayOfInterval({
-                                          start: startDate,
-                                          end: endDate,
-                                        }).length
-                                      }{" "}
-                                      days selected
-                                    </p>
-                                  </>
-                                ) : (
-                                  <p className="italic text-gray-500">
-                                    Please select an end date to complete the
-                                    range
-                                  </p>
-                                )}
-                              </div>
+                              <p className="italic text-gray-500">
+                                No dates selected. Click on the calendar to
+                                select dates.
+                              </p>
+                            )}
+                            {selectedDatesForEdit.length > 0 && (
+                              <p className="mt-1 text-xs">
+                                {selectedDatesForEdit.length}{" "}
+                                {selectedDatesForEdit.length === 1
+                                  ? "day"
+                                  : "days"}{" "}
+                                selected
+                              </p>
                             )}
                           </div>
                         </div>
@@ -830,7 +732,7 @@ export default function SchedulePage() {
                             disabled={
                               isUpdating ||
                               selectedTimeSlots.length === 0 ||
-                              (selectedDateMode === "range" && !endDate)
+                              selectedDatesForEdit.length === 0
                             }
                             onClick={updateTimeSlots}
                           >
@@ -843,15 +745,15 @@ export default function SchedulePage() {
                               <>
                                 <Save className="h-4 w-4 mr-2" />
                                 Save Hours{" "}
-                                <span className="ml-1 text-xs">
-                                  (
-                                  {selectedDateMode === "single"
-                                    ? "1 day"
-                                    : endDate
-                                      ? `${eachDayOfInterval({ start: startDate, end: endDate }).length} days`
-                                      : ""}
-                                  )
-                                </span>
+                                {selectedDatesForEdit.length > 0 && (
+                                  <span className="ml-1 text-xs">
+                                    ({selectedDatesForEdit.length}{" "}
+                                    {selectedDatesForEdit.length === 1
+                                      ? "day"
+                                      : "days"}
+                                    )
+                                  </span>
+                                )}
                               </>
                             )}
                           </Button>
