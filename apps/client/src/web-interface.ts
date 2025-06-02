@@ -593,10 +593,23 @@ class UserSession {
     return restaurants;
   }
 
+  // Utility: Get current date as a string (e.g., May 22, 2025)
+  private getCurrentDateString(): string {
+    const now = new Date();
+    return now.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
+
   // Generate system context for Claude
   generateSystemContext(): string {
+    // Add today's date at the very top
+    const todayString = this.getCurrentDateString();
+    let systemContext = `TODAY'S DATE IS: ${todayString}.\n`;
     // Start with restaurant context first if available - make it the most prominent information
-    let systemContext =
+    systemContext +=
       "You are a helpful assistant for a restaurant management system. ";
 
     // Log restaurant ID status for debugging
@@ -856,6 +869,10 @@ class UserSession {
     // Add restaurant context reminder if the message indicates table/restaurant operations and we have a restaurant ID
     let userMessage = message;
 
+    // Add today's date to the user message for extra clarity
+    const todayString = this.getCurrentDateString();
+    userMessage = `TODAY'S DATE IS: ${todayString}.\n` + userMessage;
+
     // Log original message and restaurant ID status
     this.log(`Processing user message: "${message}"`);
     this.log(`Current restaurantId: ${this.restaurantId || "none"}`);
@@ -899,7 +916,7 @@ class UserSession {
       this.log(
         `Adding restaurant context reminder to user message using name: ${restaurantName}`
       );
-      userMessage = `Remember, I want to work with "${restaurantName}" (ID: ${this.restaurantId}) for this request.\n\n${message}`;
+      userMessage = `Remember, I want to work with "${restaurantName}" (ID: ${this.restaurantId}) for this request.\n\n${userMessage}`;
     } else {
       if (containsTableRelatedTerms && !this.restaurantId) {
         this.log(
