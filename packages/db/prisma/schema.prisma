@@ -12,26 +12,26 @@ model User {
   email           String           @unique
   name            String
   password        String
-  restaurants     Restaurant[] // A user can have multiple restaurants (owned by them)
-  restaurantUsers RestaurantUser[] // A user can have multiple roles in various restaurants
+  restaurants     Restaurant[] 
+  restaurantUsers RestaurantUser[]
 }
 
 model Restaurant {
   id              Int              @id @default(autoincrement())
   name            String           @unique
-  ownerId         String // Owner's userId
+  ownerId         String 
   owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  restaurantUsers RestaurantUser[] // A restaurant can have multiple users (staff, etc.)
-  tables          Table[] // A restaurant can have multiple tables
-  roles           Role[] // A restaurant can have multiple roles (e.g. Owner, Manager)
-  menus           Menu[] // A restaurant can have multiple menus
-  dishes          Dish[] // A restaurant can have multiple dishes
+  restaurantUsers RestaurantUser[] 
+  tables          Table[] 
+  roles           Role[] 
+  menus           Menu[] 
+  dishes          Dish[] 
   Order           Order[]
 }
 
 model Role {
   id              Int        @id @default(autoincrement())
-  name            String // Role name (e.g. Owner, Manager)
+  name            String 
   canCreateRoles  Boolean    @default(false)
   canManageTables Boolean    @default(false)
   canManageSlots  Boolean    @default(false)
@@ -41,7 +41,7 @@ model Role {
   restaurantId    Int
   restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  restaurantUsers RestaurantUser[] // Add the inverse relation here
+  restaurantUsers RestaurantUser[] 
 }
 
 model RestaurantUser {
@@ -62,24 +62,24 @@ model Table {
   capacity     Int
 
   restaurant Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  bookings   Booking[] // Each table can have multiple bookings
-  timeSlots  TableTimeSlot[] // Each table can have multiple time slots for availability
+  bookings   Booking[]  
+  timeSlots  TableTimeSlot[] 
   Order      Order[]
 }
 
 model TableTimeSlot {
   id        Int      @id @default(autoincrement())
   tableId   Int
-  date      DateTime // Normalized to midnight (YYYY-MM-DDT00:00:00Z)
-  slotIndex Int // 0–47 for 30-minute intervals in a day
-  isOpen    Boolean // Whether this table is administratively open for booking
+  date      DateTime 
+  slotIndex Int 
+  isOpen    Boolean 
 
-  bookingId Int? // Optional: links to the Booking if this slot is booked
+  bookingId Int? 
   booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
   table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  @@unique([tableId, date, slotIndex]) // Prevent duplicate slots for the same table on the same date
+  @@unique([tableId, date, slotIndex]) 
 }
 
 model Booking {
@@ -87,18 +87,17 @@ model Booking {
   customerName   String
   customerPhone  String?
   tableId        Int
-  date           DateTime // Date of the booking (normalized to midnight)
-  slotIndices    Int[] // Array of slot indices
+  date           DateTime 
+  slotIndices    Int[] 
   createdAt      DateTime        @default(now())
-  orders         Order[] // Relation to orders made during this booking
-  tableTimeSlots TableTimeSlot[] // The specific time slots this booking covers
+  orders         Order[] 
+  tableTimeSlots TableTimeSlot[] 
 
   table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  @@index([date]) // Index for querying bookings by date
+  @@index([date]) 
 }
 
-// Menu model (e.g., Breakfast Menu, Lunch Menu, Dinner Menu)
 model Menu {
   id           Int     @id @default(autoincrement())
   name         String
@@ -107,42 +106,40 @@ model Menu {
   restaurantId Int
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  dishes     Dish[] // Each menu can have multiple dishes
+  dishes     Dish[] 
 
-  @@unique([restaurantId, name]) // Prevent duplicate menu names within the same restaurant
+  @@unique([restaurantId, name]) 
 }
 
-// Dish model (individual dishes/drinks)
 model Dish {
   id           Int     @id @default(autoincrement())
   name         String
   description  String?
-  price        Decimal @db.Decimal(10, 2) // Base price for standard size/portion
+  price        Decimal @db.Decimal(10, 2) 
   imageUrl     String?
   isAvailable  Boolean @default(true)
   calories     Int?
   isVegetarian Boolean @default(false)
-  displayOrder Int     @default(0) // For controlling display order within a menu
+  displayOrder Int     @default(0) 
   menuId       Int
   restaurantId Int
 
   menu       Menu        @relation(fields: [menuId], references: [id], onDelete: Cascade)
   restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  orderItems OrderItem[] // Each dish can be ordered multiple times
+  orderItems OrderItem[] 
 
-  @@index([menuId]) // Index for faster queries by menu
-  @@index([restaurantId]) // Index for faster queries by restaurant
+  @@index([menuId]) 
+  @@index([restaurantId]) 
 }
 
-// Order model for tracking customer orders
 model Order {
   id           Int     @id @default(autoincrement())
-  orderNumber  String  @unique // Formatted order number for display
+  orderNumber  String  @unique 
   restaurantId Int
-  tableId      Int // Required table reference
-  bookingId    Int? // Optional booking reference (may be null for walk-in orders)
+  tableId      Int 
+  bookingId    Int? 
   customerName String?
-  status       String // "pending", "preparing", "ready", "served", "completed", "cancelled"
+  status       String 
   totalAmount  Decimal @db.Decimal(10, 2)
   notes        String?
 
@@ -157,14 +154,13 @@ model Order {
   @@index([status])
 }
 
-// OrderItem model for individual items in an order
 model OrderItem {
   id        Int     @id @default(autoincrement())
   orderId   Int
   dishId    Int
   quantity  Int
   unitPrice Decimal @db.Decimal(10, 2)
-  status    String // "pending", "preparing", "ready", "served", "cancelled"
+  status    String 
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   dish  Dish  @relation(fields: [dishId], references: [id])

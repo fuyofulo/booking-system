@@ -11,13 +11,14 @@
     "start-web": "cd apps/backend && npm run dev",
     "start-frontend": "cd apps/frontend && npm run dev",
     "start-claude-client": "cd apps/client && npm run claude-token",
-    "start-all": "concurrently \"npm run start-server\" \"npm run start-web\" \"npm run start-frontend\" \"npm run start-claude-client\""
+    "start-web-client": "cd apps/client && npm run web-interface",
+    "dev:all": "concurrently \"npm run start-server\" \"npm run start-web\" \"npm run start-frontend\" \"npm run start-web-client\""
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "prettier": "^3.5.3",
     "turbo": "^2.5.2",
-    "typescript": "5.8.2",
-    "concurrently": "^8.2.2"
+    "typescript": "5.8.2"
   },
   "engines": {
     "node": ">=18"
